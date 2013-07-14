@@ -8,6 +8,8 @@ import subprocess
 import uuid
 import time
 import json
+import platform
+import getpass
 
 def gethome():
 	return os.path.expanduser('~')
@@ -40,7 +42,9 @@ def runscript(script):
 	qcp = os.path.join(getqueuepath(), rid)
 	with open(qcp + ".tmp", "w") as fp:
 		json.dump(dict(start_time=st, end_time=et,
-			status='OK' if ret == 0 else 'FAIL', script=script), fp)
+			status='OK' if ret == 0 else 'FAIL', script=script,
+			computername=platform.node(),
+			username=getpass.getuser()), fp)
 	os.rename(qcp + '.tmp', qcp + '.meta')
 	print("finished with id={}").format(rid)
 	return rid

@@ -43,9 +43,9 @@ def jobs():
 		status = request.form['status']
 		script = request.form['script']
 		output = request.form['output']
-		computername = 'foo'
-		computeruser = 'bah'
-		ip = '127.0.0.1'
+		computername = request.form['computername']
+		computeruser = request.form['username']
+		ip = request.remote_addr
 		with db_trans() as c:
 			c.execute("insert into jobhistory (script, computername, "
 				"ip, computeruser, datestarted, datefinished, "
