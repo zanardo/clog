@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import threading
 import sqlite3
 import os
+import re
 
 app = Flask(__name__)
 local = threading.local()
@@ -47,11 +48,15 @@ def jobs():
 		computeruser = request.form['username']
 		ip = request.remote_addr
 		rid = request.form['id']
+		if not re.match(r'^[a-f0-9-]{36}$', rid):
+			raise ValueError('invalid rid')
+		with open(config['dbname'] + '.logs/' + rid, 'w') as fp:
+			fp.write(output)
 		with db_trans() as c:
 			c.execute("insert into jobhistory (id, script, computername, "
 				"ip, computeruser, datestarted, datefinished, "
-				"status, output) values (:rid, :script, :computername, :ip, "
-				":computeruser, :start_time, :end_time, :status, :output)",
+				"status) values (:rid, :script, :computername, :ip, "
+				":computeruser, :start_time, :end_time, :status)",
 				locals())
 		return 'ok'
 
