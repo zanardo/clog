@@ -7,6 +7,7 @@ import os.path
 import subprocess
 import uuid
 import time
+import json
 
 def gethome():
 	return os.path.expanduser('~')
@@ -50,9 +51,8 @@ def runscript(script):
 		et = time.time()
 	qcp = os.path.join(getqueuepath(), rid)
 	with open(qcp + ".tmp", "w") as fp:
-		fp.write("start_time={}\n".format(st))
-		fp.write("end_time={}\n".format(et))
-		fp.write("status={}\n".format('OK' if ret == 0 else 'FAIL'))
+		json.dump(dict(start_time=st, end_time=et,
+			status='OK' if ret == 0 else 'FAIL'), fp)
 	os.rename(qcp + '.tmp', qcp + '.meta')
 	print("finished with id={}").format(rid)
 	return rid
