@@ -1,7 +1,8 @@
 all: db venv
 
 db:
-	test -f clog.db || sqlite3 clog.db < schema.sql
+	@test -f clog.db || ( sqlite3 clog.db < schema.sql \
+		&& echo "creating clog.db" )
 
 venv: .venv/bin/activate
 
