@@ -46,10 +46,11 @@ def jobs():
 		computername = request.form['computername']
 		computeruser = request.form['username']
 		ip = request.remote_addr
+		rid = request.form['id']
 		with db_trans() as c:
-			c.execute("insert into jobhistory (script, computername, "
+			c.execute("insert into jobhistory (id, script, computername, "
 				"ip, computeruser, datestarted, datefinished, "
-				"status, output) values (:script, :computername, :ip, "
+				"status, output) values (:rid, :script, :computername, :ip, "
 				":computeruser, :start_time, :end_time, :status, :output)",
 				locals())
 		return 'ok'

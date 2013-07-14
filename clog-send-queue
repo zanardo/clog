@@ -29,6 +29,7 @@ def runqueue(server):
 				meta = json.load(fp)
 			with open(rid + '.log', 'r') as fp:
 				meta['output'] = fp.read()
+			meta['id'] = rid
 			req = urllib.urlencode(meta)
 			res = urllib2.urlopen(server, req)
 			os.unlink("{}.log".format(rid))

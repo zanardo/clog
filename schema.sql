@@ -1,5 +1,5 @@
 CREATE TABLE jobhistory (
-	id integer not null primary key,
+	id text not null primary key,
 	script text not null,
 	computername text not null,
 	ip text not null,
