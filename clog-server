@@ -1,23 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import tornado.ioloop
-import tornado.web
+from flask import Flask
+
 import sqlite3
 import os
 
-class Jobs(tornado.web.RequestHandler):
+app = Flask(__name__)
 
-	def post(self):
-		script = self.get_argument('script')
-		self.write('ok')
-
-application = tornado.web.Application([
-	(r"/jobs", Jobs),
-], debug=True)
+@app.route('/jobs', methods=['GET', 'POST'])
+def jobs():
+	return 'ok'
 
 if __name__ == '__main__':
-	if not os.path.isdir('outputs'):
-		os.mkdir('outputs', 0700)
-	application.listen(7890)
-	tornado.ioloop.IOLoop.instance().start()
+	app.debug = True
+	app.run(host='127.0.0.1', port=7890)
