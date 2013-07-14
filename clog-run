@@ -25,18 +25,6 @@ def createpaths():
 			print("creating {}...").format(p)
 			os.mkdir(p, 0700)
 
-def runqueue():
-	print("starting queue dispatch...")
-	qp = getqueuepath()
-	os.chdir(qp)
-	for f in os.listdir('.'):
-		if len(f) == 41 and f.endswith('.meta'):
-			rid = f[:36]
-			print("sending job {}...").format(rid)
-			os.unlink("{}.log".format(rid))
-			os.unlink("{}.meta".format(rid))
-	print("finished queue dispatch")
-
 def runscript(script):
 	print("running script {}").format(script)
 	sp = os.path.join(getscriptspath(), script)
@@ -61,8 +49,6 @@ if __name__ == '__main__':
 
 	createpaths()
 
-	if len(sys.argv) == 1:
-		runqueue()
-	else:
-		unit = sys.argv[1]
-		rid = runscript(unit)
+	if len(sys.argv) > 1:
+		script = sys.argv[1]
+		runscript(script)
