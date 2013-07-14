@@ -1,16 +1,58 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import Flask
+from flask import Flask, request
+from contextlib import contextmanager
 
+import threading
 import sqlite3
 import os
 
 app = Flask(__name__)
+local = threading.local()
+config = {}
+config['dbname'] = 'clog.db'
+
+def getdb():
+    if not hasattr(local, 'db'):
+        local.db = sqlite3.connect(config['dbname'],
+                                   detect_types=sqlite3.PARSE_DECLTYPES)
+        local.db.row_factory = sqlite3.Row
+    return local.db
+
+def getcursor():
+    return getdb().cursor()
+
+@contextmanager
+def db_trans():
+    dbh = getdb()
+    c = dbh.cursor()
+    try:
+        yield c
+    except:
+        dbh.rollback()
+        raise
+    finally:
+        dbh.commit()
 
 @app.route('/jobs', methods=['GET', 'POST'])
 def jobs():
-	return 'ok'
+	if request.method == 'POST':
+		start_time = request.form['start_time']
+		end_time = request.form['end_time']
+		status = request.form['status']
+		script = request.form['script']
+		output = request.form['output']
+		computername = 'foo'
+		computeruser = 'bah'
+		ip = '127.0.0.1'
+		with db_trans() as c:
+			c.execute("insert into jobhistory (script, computername, "
+				"ip, computeruser, datestarted, datefinished, "
+				"status, output) values (:script, :computername, :ip, "
+				":computeruser, :start_time, :end_time, :status, :output)",
+				locals())
+		return 'ok'
 
 if __name__ == '__main__':
 	app.debug = True
