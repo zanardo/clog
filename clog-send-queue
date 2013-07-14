@@ -8,6 +8,8 @@ import subprocess
 import uuid
 import time
 import json
+import urllib
+import urllib2
 
 def gethome():
 	return os.path.expanduser('~')
@@ -23,6 +25,10 @@ def runqueue(server):
 		if len(f) == 41 and f.endswith('.meta'):
 			rid = f[:36]
 			print("sending job {}...").format(rid)
+			with open(f, 'r') as fp:
+				meta = json.load(fp)
+			req = urllib.urlencode(meta)
+			res = urllib2.urlopen(server, req)
 			os.unlink("{}.log".format(rid))
 			os.unlink("{}.meta".format(rid))
 	print("finished queue dispatch")
