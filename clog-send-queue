@@ -15,7 +15,7 @@ def gethome():
 def getqueuepath():
 	return os.path.join(gethome(), '.clog-queue')
 
-def runqueue():
+def runqueue(server):
 	print("starting queue dispatch...")
 	qp = getqueuepath()
 	os.chdir(qp)
@@ -29,4 +29,10 @@ def runqueue():
 
 
 if __name__ == '__main__':
-	runqueue()
+
+	if len(sys.argv) > 1:
+		server = sys.argv[1]
+		runqueue(server)
+	else:
+		print("Usage: {} <server url>").format(sys.argv[0])
+		sys.exit(1)
