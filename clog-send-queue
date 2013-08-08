@@ -27,12 +27,12 @@ def runqueue(server):
 			print("sending job {}...").format(rid)
 			with open(f, 'r') as fp:
 				meta = json.load(fp)
-			with open(rid + '.log', 'r') as fp:
+			with open(rid + '.out', 'r') as fp:
 				meta['output'] = fp.read()
 			meta['id'] = rid
 			req = urllib.urlencode(meta)
 			res = urllib2.urlopen(server, req)
-			os.unlink("{}.log".format(rid))
+			os.unlink("{}.out".format(rid))
 			os.unlink("{}.meta".format(rid))
 	print("finished queue dispatch")
 

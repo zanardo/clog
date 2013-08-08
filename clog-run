@@ -34,7 +34,7 @@ def runscript(script):
 		print("error: file {} not found!").format(sp)
 		sys.exit(1)
 	rid = str(uuid.uuid4())
-	qlp = os.path.join(getqueuepath(), "{}.log".format(rid))
+	qlp = os.path.join(getqueuepath(), "{}.out".format(rid))
 	with open(qlp, "w") as fp:
 		st = time.time()
 		ret = subprocess.call(sp, stdout=fp, stderr=subprocess.STDOUT)
