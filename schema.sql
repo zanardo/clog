@@ -4,7 +4,7 @@ CREATE TABLE jobhistory (
 	computername text not null,
 	ip text not null,
 	computeruser text not null,
-	datestarted timestamp not null,
-	datefinished timestamp not null,
+	datestarted decimal not null,
+	datefinished decimal not null,
 	status integer not null
 );

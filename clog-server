@@ -17,8 +17,7 @@ config['dbname'] = 'clog.db'
 
 def getdb():
     if not hasattr(local, 'db'):
-        local.db = sqlite3.connect(config['dbname'],
-                                   detect_types=sqlite3.PARSE_DECLTYPES)
+        local.db = sqlite3.connect(config['dbname'])
         local.db.row_factory = sqlite3.Row
     return local.db
 
