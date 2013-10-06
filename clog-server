@@ -110,6 +110,7 @@ def jobs():
 			j = dict(job)
 			j['lastsuccess'] = timestamp_to_show(j['lastsuccess'])
 			j['lastfail'] = timestamp_to_show(j['lastfail'])
+			j['lastduration'] = "%.3f" % j['lastduration']
 			jobs.append(j)
 		return render_template('jobs.html', jobs=jobs)
 
