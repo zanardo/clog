@@ -42,6 +42,25 @@ def timestamp_to_show(timestamp):
 	else:
 		return '-'
 
+@app.route('/jobs/<computername>/<computeruser>/<script>/', methods=['GET'])
+def jobhistory(computername, computeruser, script):
+	c = getcursor()
+	c.execute("select id, computername, computeruser, script, "
+		"datestarted, datefinished, status, datefinished-datestarted as duration "
+		"from jobhistory "
+		"where computername=:computername "
+		"  and computeruser=:computeruser "
+		"  and script=:script "
+		"order by computername, computeruser, script, datestarted desc", (locals()))
+	history = []
+	for hist in c:
+		h = dict(hist)
+		h['datestarted'] = timestamp_to_show(h['datestarted'])
+		h['datefinished'] = timestamp_to_show(h['datefinished'])
+		h['duration'] = "%.3f" % h['duration']
+		history.append(h)
+	return render_template('history.html', history=history)
+
 @app.route('/jobs', methods=['GET', 'POST'])
 def jobs():
 	if request.method == 'POST':

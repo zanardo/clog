@@ -10,7 +10,7 @@
 	<tr>
 		<td>{{ job.computername }}</td>
 		<td>{{ job.computeruser }}</td>
-		<td>{{ job.script }}</td>
+		<td><a href="/jobs/{{job.computername}}/{{job.computeruser}}/{{job.script}}/">{{ job.script }}</a></td>
 		<td>{{ job.lastsuccess }}</td>
 		<td>{{ job.lastfail }}</td>
 		<td>{{ job.laststatus }}</td>
