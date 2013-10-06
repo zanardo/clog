@@ -37,6 +37,12 @@ def db_trans():
     finally:
         dbh.commit()
 
+def timestamp_to_show(timestamp):
+	if timestamp:
+		return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+	else:
+		return '-'
+
 @app.route('/jobs', methods=['GET', 'POST'])
 def jobs():
 	if request.method == 'POST':
@@ -103,14 +109,8 @@ def jobs():
 		jobs = []
 		for job in c:
 			j = dict(job)
-			if j['lastsuccess']:
-				j['lastsuccess'] = datetime.datetime.fromtimestamp(j['lastsuccess']).strftime('%Y-%m-%d %H:%M:%S')
-			else:
-				j['lastsuccess'] = '-'
-			if j['lastfail']:
-				j['lastfail'] = datetime.datetime.fromtimestamp(j['lastfail']).strftime('%Y-%m-%d %H:%M:%S')
-			else:
-				j['lastfail'] = '-'
+			j['lastsuccess'] = timestamp_to_show(j['lastsuccess'])
+			j['lastfail'] = timestamp_to_show(j['lastfail'])
 			jobs.append(j)
 		return render_template('jobs.html', jobs=jobs)
 
