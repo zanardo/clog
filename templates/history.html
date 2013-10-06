@@ -13,7 +13,7 @@
 		<td>{{ h.script }}</td>
 		<td>{{ h.datestarted }}</td>
 		<td>{{ h.datefinished }}</td>
-		<td>{{ h.status }}</td>
+		<td><a href="/job/{{ h.id }}">{{ h.status }}</a></td>
 		<td>{{ h.duration }}s</td>
 	</tr>
 	{% endfor %}
