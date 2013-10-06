@@ -1,0 +1,20 @@
+<table border="1">
+	<th>Computer</th>
+	<th>User</th>
+	<th>Script</th>
+	<th>Last Success</th>
+	<th>Last Fail</th>
+	<th>Last Status</th>
+	<th>Last Duration</th>
+	{% for job in jobs %}
+	<tr>
+		<td>{{ job.computername }}</td>
+		<td>{{ job.computeruser }}</td>
+		<td>{{ job.script }}</td>
+		<td>{{ job.lastsuccess }}</td>
+		<td>{{ job.lastfail }}</td>
+		<td>{{ job.laststatus }}</td>
+		<td>{{ job.lastduration }}s</td>
+	</tr>
+	{% endfor %}
+</table>

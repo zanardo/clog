@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 from contextlib import contextmanager
 
 import threading
 import sqlite3
 import os
 import re
+import datetime
 
 app = Flask(__name__)
 local = threading.local()
@@ -59,6 +60,59 @@ def jobs():
 				":computeruser, :start_time, :end_time, :status)",
 				locals())
 		return 'ok'
+	elif request.method == 'GET':
+		c = getcursor()
+		c.execute("""
+			select j.computername
+			, j.computeruser
+			, j.script
+			, ( select max(datestarted)
+				from jobhistory
+				where computername=j.computername
+					and computeruser=j.computeruser
+					and script=j.script
+					and status='OK'
+			  ) as lastsuccess
+			, ( select max(datestarted)
+				from jobhistory
+				where computername=j.computername
+					and computeruser=j.computeruser
+					and script=j.script
+					and status='FAIL'
+			  ) as lastfail
+			, ( select status
+				from jobhistory
+				where computername=j.computername
+					and computeruser=j.computeruser
+					and script=j.script
+				order by datestarted desc
+				limit 1
+			  ) as laststatus
+			, ( select datefinished-datestarted
+				from jobhistory
+				where computername=j.computername
+					and computeruser=j.computeruser
+					and script=j.script
+				order by datestarted desc
+				limit 1
+			  ) as lastduration
+			from jobhistory as j
+			group by j.computername, j.computeruser, j.script
+			order by j.computername, j.computeruser, j.script ;
+		""")
+		jobs = []
+		for job in c:
+			j = dict(job)
+			if j['lastsuccess']:
+				j['lastsuccess'] = datetime.datetime.fromtimestamp(j['lastsuccess']).strftime('%Y-%m-%d %H:%M:%S')
+			else:
+				j['lastsuccess'] = '-'
+			if j['lastfail']:
+				j['lastfail'] = datetime.datetime.fromtimestamp(j['lastfail']).strftime('%Y-%m-%d %H:%M:%S')
+			else:
+				j['lastfail'] = '-'
+			jobs.append(j)
+		return render_template('jobs.html', jobs=jobs)
 
 if __name__ == '__main__':
 	app.debug = True
