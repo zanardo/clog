@@ -76,7 +76,7 @@ def jobs():
 		end_time = request.form['end_time']
 		status = request.form['status']
 		script = request.form['script']
-		output = request.form['output']
+		output = request.form['output'].encode('utf-8')
 		computername = request.form['computername']
 		computeruser = request.form['username']
 		ip = request.remote_addr
