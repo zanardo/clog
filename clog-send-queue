@@ -31,11 +31,14 @@ def runqueue(server):
 				meta['output'] = fp.read()
 			meta['id'] = rid
 			data = urllib.urlencode(meta)
-			req = urllib2.Request(server)
+			req = urllib2.Request(server, data)
 			req.addheaders = [('Content-Type', 'text/plain; charset=utf-8')]
-			res = urllib2.urlopen(req)
-			os.unlink("{}.out".format(rid))
-			os.unlink("{}.meta".format(rid))
+			res = urllib2.urlopen(req).read()
+			if res == 'ok':
+				os.unlink("{}.out".format(rid))
+				os.unlink("{}.meta".format(rid))
+			else:
+				print res
 	print("finished queue dispatch")
 
 
