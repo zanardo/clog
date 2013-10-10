@@ -11,6 +11,9 @@ import json
 import platform
 import getpass
 
+def strenc(s):
+	return s.decode('utf-8', 'replace').encode('utf-8')
+
 def gethome():
 	return os.path.expanduser('~')
 
@@ -51,8 +54,8 @@ def runscript(script):
 	with open(qcp + ".tmp", "w") as fp:
 		json.dump(dict(start_time=st, end_time=et,
 			status='OK' if ret == 0 else 'FAIL', script=script,
-			computername=platform.node(),
-			username=getpass.getuser()), fp)
+			computername=strenc(platform.node()),
+			username=strenc(getpass.getuser())), fp)
 	os.rename(qcp + '.tmp', qcp + '.meta')
 	print("finished with id={}").format(rid)
 	return rid
