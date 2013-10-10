@@ -44,7 +44,7 @@ def runscript(script):
 			stdout=subprocess.PIPE)
 		ret = None
 		while True:
-			chunk = s.stdout.read(4096).decode('utf-8', 'replace').encode('utf-8')
+			chunk = strenc(s.stdout.read(4096))
 			fp.write(chunk)
 			ret = s.poll()
 			if ret is not None:
