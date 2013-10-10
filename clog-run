@@ -37,7 +37,15 @@ def runscript(script):
 	qlp = os.path.join(getqueuepath(), "{}.out".format(rid))
 	with open(qlp, "w") as fp:
 		st = time.time()
-		ret = subprocess.call(sp, stdout=fp, stderr=subprocess.STDOUT)
+		s = subprocess.Popen(sp, stderr=subprocess.STDOUT, bufsize=4096,
+			stdout=subprocess.PIPE)
+		ret = None
+		while True:
+			chunk = s.stdout.read(4096)
+			fp.write(chunk)
+			ret = s.poll()
+			if ret is not None:
+				break
 		et = time.time()
 	qcp = os.path.join(getqueuepath(), rid)
 	with open(qcp + ".tmp", "w") as fp:
