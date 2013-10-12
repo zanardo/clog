@@ -120,6 +120,8 @@ def runqueue(server, timeout=30, queue_path=None):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
+
+	# Global arguments.
 	parser.add_argument('-q', '--queue-path',
 		help='queue path (default: $HOME/.clog-queue', default=getqueuepath(),
 		dest='queue_path')
@@ -129,11 +131,13 @@ if __name__ == '__main__':
 
 	subparsers = parser.add_subparsers(help='sub-commands help', dest='sub')
 
+	# clog run
 	parser_run = subparsers.add_parser('run', help='run scripts')
 	parser_run.add_argument('-e', '--encoding', 
 		help='charset for script output (default: UTF-8)', default='UTF-8')
 	parser_run.add_argument('script', help='script name')
 
+	# clog send-queue
 	parser_queue = subparsers.add_parser('send-queue', help='send scripts output')
 	parser_queue.add_argument('server_url', help='server url')
 	parser_queue.add_argument('-t', '--timeout', help='timeout in seconds',
@@ -141,6 +145,7 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
+	# Create necessary paths if they don't exist.
 	createpaths(scripts_path=args.scripts_path, queue_path=args.queue_path)
 	
 	if args.sub == 'run':
