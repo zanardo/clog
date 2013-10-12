@@ -16,21 +16,23 @@ def getscriptspath():
 def getqueuepath():
 	return os.path.join(gethome(), '.clog-queue')
 
-def createpaths():
-	paths = [ getscriptspath(), getqueuepath() ]
+def createpaths(queue_path=None, scripts_path=None):
+	if queue_path is None: queue_path = getqueuepath()
+	if scripts_path is None: scripts_path = getscriptspath()
+	paths = [ queue_path, scripts_path ]
 	for p in paths:
 		if not os.path.isdir(p):
 			print("creating {}...").format(p)
 			os.mkdir(p, 0700)
 
-def runscript(script, encoding='UTF-8'):
+def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 	print("running script {}").format(script)
-	sp = os.path.join(getscriptspath(), script)
+	sp = os.path.join(scripts_path, script)
 	if not os.path.isfile(sp):
 		print("error: file {} not found!").format(sp)
 		sys.exit(1)
 	rid = str(uuid.uuid4())
-	qlp = os.path.join(getqueuepath(), "{}.out".format(rid))
+	qlp = os.path.join(queue_path, "{}.out".format(rid))
 	with open(qlp, "w") as fp:
 		st = time.time()
 		s = subprocess.Popen(sp, stderr=subprocess.STDOUT, bufsize=4096,
@@ -43,7 +45,7 @@ def runscript(script, encoding='UTF-8'):
 			if ret is not None:
 				break
 		et = time.time()
-	qcp = os.path.join(getqueuepath(), rid)
+	qcp = os.path.join(queue_path, rid)
 	with open(qcp + ".tmp", "w") as fp:
 		json.dump(dict(start_time=st, end_time=et,
 			status='OK' if ret == 0 else 'FAIL', script=script,
@@ -53,10 +55,9 @@ def runscript(script, encoding='UTF-8'):
 	print("finished with id={}").format(rid)
 	return rid
 
-def runqueue(server, timeout=30):
+def runqueue(server, timeout=30, queue_path=None):
 	print("starting queue dispatch...")
-	qp = getqueuepath()
-	os.chdir(qp)
+	os.chdir(queue_path)
 	for f in os.listdir('.'):
 		if len(f) == 41 and f.endswith('.meta'):
 			rid = f[:36]
@@ -84,6 +85,13 @@ def runqueue(server, timeout=30):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
+	parser.add_argument('-q', '--queue-path',
+		help='queue path (default: $HOME/.clog-queue', default=getqueuepath(),
+		dest='queue_path')
+	parser.add_argument('-s', '--scripts-path',
+		help='scripts path (default: $HOME/.clog-scripts',
+		default=getscriptspath(), dest='scripts_path')
+
 	subparsers = parser.add_subparsers(help='sub-commands help', dest='sub')
 
 	parser_run = subparsers.add_parser('run', help='run scripts')
@@ -97,8 +105,11 @@ if __name__ == '__main__':
 		default=30, type=int)
 
 	args = parser.parse_args()
+
+	createpaths(scripts_path=args.scripts_path, queue_path=args.queue_path)
 	
 	if args.sub == 'run':
-		runscript(args.script, encoding=args.encoding)
+		runscript(args.script, encoding=args.encoding, queue_path=args.queue_path,
+			scripts_path=args.scripts_path)
 	elif args.sub == 'send-queue':
-		runqueue(args.server_url, timeout=args.timeout)
+		runqueue(args.server_url, timeout=args.timeout, queue_path=args.queue_path)
