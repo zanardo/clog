@@ -53,7 +53,7 @@ def runscript(script, encoding='UTF-8'):
 	print("finished with id={}").format(rid)
 	return rid
 
-def runqueue(server):
+def runqueue(server, timeout=30):
 	print("starting queue dispatch...")
 	qp = getqueuepath()
 	os.chdir(qp)
@@ -69,12 +69,16 @@ def runqueue(server):
 			data = urllib.urlencode(meta)
 			req = urllib2.Request(server, data)
 			req.addheaders = [('Content-Type', 'text/plain; charset=utf-8')]
-			res = urllib2.urlopen(req).read()
-			if res == 'ok':
-				os.unlink("{}.out".format(rid))
-				os.unlink("{}.meta".format(rid))
+			try:
+				res = urllib2.urlopen(req, None, timeout=timeout).read()
+			except urllib2.URLError, ex:
+				print("error: {}").format(ex)
 			else:
-				print res
+				if res == 'ok':
+					os.unlink("{}.out".format(rid))
+					os.unlink("{}.meta".format(rid))
+				else:
+					print res
 	print("finished queue dispatch")
 
 if __name__ == '__main__':
@@ -89,10 +93,12 @@ if __name__ == '__main__':
 
 	parser_queue = subparsers.add_parser('send-queue', help='send scripts output')
 	parser_queue.add_argument('server_url', help='server url')
+	parser_queue.add_argument('-t', '--timeout', help='timeout in seconds',
+		default=30, type=int)
 
 	args = parser.parse_args()
 	
 	if args.sub == 'run':
 		runscript(args.script, encoding=args.encoding)
 	elif args.sub == 'send-queue':
-		runqueue(args.server_url)
+		runqueue(args.server_url, timeout=args.timeout)
