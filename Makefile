@@ -14,5 +14,4 @@ venv: .venv/bin/activate
 	touch .venv/bin/activate
 
 install-cli:
-	sudo install -o root -g root -m 755 clog-run /usr/bin/clog-run
-	sudo install -o root -g root -m 755 clog-send-queue /usr/bin/clog-send-queue
+	sudo install -o root -g root -m 755 clog /usr/bin/clog
