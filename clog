@@ -29,7 +29,12 @@
 #
 
 import sys, os, os.path, subprocess, uuid, time, json, platform
-import getpass, argparse, urllib, urllib2
+import getpass, argparse, urllib, urllib2, logging
+
+logging.basicConfig(level=logging.DEBUG,
+	format='%(asctime)s %(levelname)8s | %(message)s',
+	datefmt='%Y/%m/%d %H:%M:%S')
+log = logging.getLogger(__name__)
 
 # Convert string from "encoding" to UTF-8. The conversion do not
 # breaks if an invalid character is processed.
@@ -55,15 +60,15 @@ def createpaths(queue_path=None, scripts_path=None):
 	paths = [ queue_path, scripts_path ]
 	for p in paths:
 		if not os.path.isdir(p):
-			print("creating {}...").format(p)
+			log.info("creating %s", p)
 			os.mkdir(p, 0700)
 
 # Run a script (clog run).
 def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
-	print("running script {}").format(script)
+	log.info("running script %s", script)
 	sp = os.path.join(scripts_path, script)
 	if not os.path.isfile(sp):
-		print("error: file {} not found!").format(sp)
+		log.critical("file %s not found!", sp)
 		sys.exit(1)
 	rid = str(uuid.uuid4())
 	qlp = os.path.join(queue_path, "{}.out".format(rid))
@@ -88,17 +93,17 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 			username=strenc(getpass.getuser())), fp)
 		fp.flush()
 	os.rename(qcp + '.tmp', qcp + '.meta')
-	print("finished with id={}").format(rid)
+	log.info("finished with id = %s", rid)
 	return rid
 
 # Send queue (clog send-queue).
 def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
-	print("starting queue dispatch...")
+	log.info("starting queue dispatch")
 	os.chdir(queue_path)
 	for f in os.listdir('.'):
 		if len(f) == 41 and f.endswith('.meta'):
 			rid = f[:36]
-			print("sending job {}...").format(rid)
+			log.info("sending job %s", rid)
 			with open(f, 'r') as fp:
 				meta = json.load(fp)
 			with open(rid + '.out', 'r') as fp:
@@ -117,14 +122,14 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
 			try:
 				res = urllib2.urlopen(req, None, timeout=timeout).read()
 			except urllib2.URLError, ex:
-				print("error: {}").format(ex)
+				log.error("error sending queue: %s", ex)
 			else:
 				if res == 'ok':
 					os.unlink("{}.out".format(rid))
 					os.unlink("{}.meta".format(rid))
 				else:
-					print res
-	print("finished queue dispatch")
+					log.error("server response: %s", res)
+	log.info("finished queue dispatch")
 
 if __name__ == '__main__':
 
