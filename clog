@@ -4,8 +4,8 @@
 import sys, os, os.path, subprocess, uuid, time, json, platform
 import getpass, argparse, urllib, urllib2
 
-def strenc(s):
-	return s.decode('utf-8', 'replace').encode('utf-8')
+def strenc(s, encoding='UTF-8'):
+	return s.decode(encoding, 'replace').encode('utf-8')
 
 def gethome():
 	return os.path.expanduser('~')
@@ -23,7 +23,7 @@ def createpaths():
 			print("creating {}...").format(p)
 			os.mkdir(p, 0700)
 
-def runscript(script):
+def runscript(script, encoding='UTF-8'):
 	print("running script {}").format(script)
 	sp = os.path.join(getscriptspath(), script)
 	if not os.path.isfile(sp):
@@ -37,7 +37,7 @@ def runscript(script):
 			stdout=subprocess.PIPE)
 		ret = None
 		while True:
-			chunk = strenc(s.stdout.read(4096))
+			chunk = strenc(s.stdout.read(4096), encoding=encoding)
 			fp.write(chunk)
 			ret = s.poll()
 			if ret is not None:
@@ -83,6 +83,8 @@ if __name__ == '__main__':
 	subparsers = parser.add_subparsers(help='sub-commands help', dest='sub')
 
 	parser_run = subparsers.add_parser('run', help='run scripts')
+	parser_run.add_argument('-e', '--encoding', 
+		help='charset for script output (default: UTF-8)', default='UTF-8')
 	parser_run.add_argument('script', help='script name')
 
 	parser_queue = subparsers.add_parser('send-queue', help='send scripts output')
@@ -91,6 +93,6 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	
 	if args.sub == 'run':
-		runscript(args.script)
+		runscript(args.script, encoding=args.encoding)
 	elif args.sub == 'send-queue':
 		runqueue(args.server_url)
