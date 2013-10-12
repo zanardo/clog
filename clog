@@ -92,7 +92,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 	return rid
 
 # Send queue (clog send-queue).
-def runqueue(server, timeout=30, queue_path=None):
+def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
 	print("starting queue dispatch...")
 	os.chdir(queue_path)
 	for f in os.listdir('.'):
@@ -102,7 +102,14 @@ def runqueue(server, timeout=30, queue_path=None):
 			with open(f, 'r') as fp:
 				meta = json.load(fp)
 			with open(rid + '.out', 'r') as fp:
-				meta['output'] = fp.read()
+				# If output file is bigger than max_size, we will read only
+				# max_size bytes from the bottom.
+				file_size = os.path.getsize(rid + '.out')
+				if file_size > max_size:
+					fp.seek(file_size - max_size)
+					meta['output'] = fp.read(max_size)
+				else:
+					meta['output'] = fp.read()
 			meta['id'] = rid
 			data = urllib.urlencode(meta)
 			req = urllib2.Request(server, data)
@@ -144,6 +151,8 @@ if __name__ == '__main__':
 	parser_queue.add_argument('server_url', help='server url')
 	parser_queue.add_argument('-t', '--timeout', help='timeout in seconds',
 		default=30, type=int)
+	parser_queue.add_argument('-z', '--max-size', help='output max size in bytes',
+		default=1048576, type=int, dest='max_size')
 
 	args = parser.parse_args()
 
@@ -154,4 +163,5 @@ if __name__ == '__main__':
 		runscript(args.script, encoding=args.encoding, queue_path=args.queue_path,
 			scripts_path=args.scripts_path)
 	elif args.sub == 'send-queue':
-		runqueue(args.server_url, timeout=args.timeout, queue_path=args.queue_path)
+		runqueue(args.server_url, timeout=args.timeout, queue_path=args.queue_path,
+			max_size=args.max_size)
