@@ -1,18 +1,8 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-import os.path
-import subprocess
-import uuid
-import time
-import json
-import platform
-import getpass
-import argparse
-import urllib
-import urllib2
+import sys, os, os.path, subprocess, uuid, time, json, platform
+import getpass, argparse, urllib, urllib2
 
 def strenc(s):
 	return s.decode('utf-8', 'replace').encode('utf-8')
