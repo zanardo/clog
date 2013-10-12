@@ -111,6 +111,8 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
 				# max_size bytes from the bottom.
 				file_size = os.path.getsize(rid + '.out')
 				if file_size > max_size:
+					log.info("output too large, stripping %d bytes",
+							file_size-max_size)
 					fp.seek(file_size - max_size)
 					meta['output'] = fp.read(max_size)
 				else:
