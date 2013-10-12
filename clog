@@ -11,6 +11,8 @@ import json
 import platform
 import getpass
 import argparse
+import urllib
+import urllib2
 
 def strenc(s):
 	return s.decode('utf-8', 'replace').encode('utf-8')
@@ -61,6 +63,30 @@ def runscript(script):
 	print("finished with id={}").format(rid)
 	return rid
 
+def runqueue(server):
+	print("starting queue dispatch...")
+	qp = getqueuepath()
+	os.chdir(qp)
+	for f in os.listdir('.'):
+		if len(f) == 41 and f.endswith('.meta'):
+			rid = f[:36]
+			print("sending job {}...").format(rid)
+			with open(f, 'r') as fp:
+				meta = json.load(fp)
+			with open(rid + '.out', 'r') as fp:
+				meta['output'] = fp.read()
+			meta['id'] = rid
+			data = urllib.urlencode(meta)
+			req = urllib2.Request(server, data)
+			req.addheaders = [('Content-Type', 'text/plain; charset=utf-8')]
+			res = urllib2.urlopen(req).read()
+			if res == 'ok':
+				os.unlink("{}.out".format(rid))
+				os.unlink("{}.meta".format(rid))
+			else:
+				print res
+	print("finished queue dispatch")
+
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
@@ -76,3 +102,5 @@ if __name__ == '__main__':
 	
 	if args.sub == 'run':
 		runscript(args.script)
+	elif args.sub == 'send-queue':
+		runqueue(args.server_url)
