@@ -29,7 +29,7 @@
 #
 
 import sys, os, os.path, subprocess, uuid, time, json, platform
-import getpass, argparse, urllib, urllib2, logging
+import getpass, argparse, urllib, urllib2, logging, socket
 
 logging.basicConfig(level=logging.DEBUG,
 	format='%(asctime)s.%(msecs).03d %(levelname).3s | %(message)s',
@@ -123,7 +123,7 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
 			req.addheaders = [('Content-Type', 'text/plain; charset=utf-8')]
 			try:
 				res = urllib2.urlopen(req, None, timeout=timeout).read()
-			except urllib2.URLError, ex:
+			except (socket.timeout, urllib2.URLError), ex:
 				log.error("error sending queue: %s", ex)
 			else:
 				if res == 'ok':
