@@ -10,6 +10,7 @@ import time
 import json
 import platform
 import getpass
+import argparse
 
 def strenc(s):
 	return s.decode('utf-8', 'replace').encode('utf-8')
@@ -62,11 +63,16 @@ def runscript(script):
 
 if __name__ == '__main__':
 
-	createpaths()
+	parser = argparse.ArgumentParser()
+	subparsers = parser.add_subparsers(help='sub-commands help', dest='sub')
 
-	if len(sys.argv) > 1:
-		script = sys.argv[1]
-		runscript(script)
-	else:
-		print("Usage: {} <script>").format(sys.argv[0])
-		sys.exit(1)
+	parser_run = subparsers.add_parser('run', help='run scripts')
+	parser_run.add_argument('script', help='script name')
+
+	parser_queue = subparsers.add_parser('send-queue', help='send scripts output')
+	parser_queue.add_argument('server_url', help='server url')
+
+	args = parser.parse_args()
+	
+	if args.sub == 'run':
+		runscript(args.script)
