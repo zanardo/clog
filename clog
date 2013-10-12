@@ -27,18 +27,24 @@
 import sys, os, os.path, subprocess, uuid, time, json, platform
 import getpass, argparse, urllib, urllib2
 
+# Convert string from "encoding" to UTF-8. The conversion do not
+# breaks if an invalid character is processed.
 def strenc(s, encoding='UTF-8'):
 	return s.decode(encoding, 'replace').encode('utf-8')
 
+# Get user home path.
 def gethome():
 	return os.path.expanduser('~')
 
+# Get default user clog scripts path.
 def getscriptspath():
 	return os.path.join(gethome(), '.clog-scripts')
 
+# Get default user clog queue path.
 def getqueuepath():
 	return os.path.join(gethome(), '.clog-queue')
 
+# Create clog queue and scripts path.
 def createpaths(queue_path=None, scripts_path=None):
 	if queue_path is None: queue_path = getqueuepath()
 	if scripts_path is None: scripts_path = getscriptspath()
@@ -48,6 +54,7 @@ def createpaths(queue_path=None, scripts_path=None):
 			print("creating {}...").format(p)
 			os.mkdir(p, 0700)
 
+# Run a script (clog run).
 def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 	print("running script {}").format(script)
 	sp = os.path.join(scripts_path, script)
@@ -78,6 +85,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 	print("finished with id={}").format(rid)
 	return rid
 
+# Send queue (clog send-queue).
 def runqueue(server, timeout=30, queue_path=None):
 	print("starting queue dispatch...")
 	os.chdir(queue_path)
