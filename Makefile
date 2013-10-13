@@ -1,10 +1,10 @@
 all: db venv
 
 db:
-	@test -f clog.db || ( sqlite3 clog.db < schema.sql \
-		&& echo "creating clog.db" )
-	@test -d clog.db.logs || ( mkdir clog.db.logs \
-		&& chmod 700 clog.db.logs && echo "creating clog.db.logs" )
+	@test -f clogd.db || ( sqlite3 clogd.db < schema.sql \
+		&& echo "creating clogd.db" )
+	@test -d clogd.db.logs || ( mkdir clogd.db.logs \
+		&& chmod 700 clogd.db.logs && echo "creating clogd.db.logs" )
 
 venv: .venv/bin/activate
 
