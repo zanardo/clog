@@ -1,1 +1,2 @@
-Flask==0.10.1
+Bottle==0.11.6
+waitress==0.8.7
