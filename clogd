@@ -36,7 +36,7 @@ import threading, sqlite3, os, re, datetime, os.path, argparse
 app = Flask(__name__)
 local = threading.local()
 config = {}
-config['dbname'] = 'clog.db'
+config['dbname'] = 'clogd.db'
 
 def getdb():
     if not hasattr(local, 'db'):
