@@ -69,7 +69,7 @@ def timestamp_to_show(timestamp):
 def joboutput(id):
 	if not re.match(r'^[a-f0-9-]{36}$', id):
 		raise ValueError('invalid id')
-	return send_file(os.path.join('clog.db.logs', id), mimetype='text/plain')
+	return send_file(os.path.join('clogd.db.logs', id), mimetype='text/plain')
 
 
 @app.route('/jobs/<computername>/<computeruser>/<script>/', methods=['GET'])
