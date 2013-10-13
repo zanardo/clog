@@ -120,7 +120,8 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
 			meta['id'] = rid
 			data = urllib.urlencode(meta)
 			req = urllib2.Request(server, data)
-			req.add_header('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
+			req.add_header('Content-Type',
+				'application/x-www-form-urlencoded; charset=utf-8')
 			try:
 				res = urllib2.urlopen(req, None, timeout=timeout).read()
 			except Exception, ex:
