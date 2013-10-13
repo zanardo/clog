@@ -1,0 +1,22 @@
+<h1>clog job history</h1>
+
+<table border="1">
+	<th>Computer</th>
+	<th>User</th>
+	<th>Script</th>
+	<th>Start</th>
+	<th>End</th>
+	<th>Status</th>
+	<th>Duration</th>
+	%for h in history:
+	<tr>
+		<td>{{ h['computername'] }}</td>
+		<td>{{ h['computeruser'] }}</td>
+		<td>{{ h['script'] }}</td>
+		<td>{{ h['datestarted'] }}</td>
+		<td>{{ h['datefinished'] }}</td>
+		<td><a href="/job/{{ h['id'] }}">{{ h['status'] }}</a></td>
+		<td>{{ h['duration'] }}s</td>
+	</tr>
+	%end
+</table>
