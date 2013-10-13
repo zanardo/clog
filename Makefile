@@ -17,4 +17,4 @@ install-cli:
 	sudo install -o root -g root -m 755 clog /usr/bin/clog
 
 run-server-devel:
-	while :; do ./.venv/bin/python clogd ; sleep 0.5 ; done
+	while :; do ./.venv/bin/python clogd --host 127.0.0.1 --port 6789 --debug ; sleep 0.5 ; done
