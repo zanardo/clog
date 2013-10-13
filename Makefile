@@ -15,3 +15,6 @@ venv: .venv/bin/activate
 
 install-cli:
 	sudo install -o root -g root -m 755 clog /usr/bin/clog
+
+run-server-devel:
+	while :; do ./.venv/bin/python clogd ; sleep 0.5 ; done
