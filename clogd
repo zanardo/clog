@@ -31,7 +31,7 @@
 from flask import Flask, request, render_template, send_file
 from contextlib import contextmanager
 
-import threading, sqlite3, os, re, datetime, os.path
+import threading, sqlite3, os, re, datetime, os.path, argparse
 
 app = Flask(__name__)
 local = threading.local()
@@ -164,8 +164,17 @@ def jobs():
 		return render_template('jobs.html', jobs=jobs)
 
 if __name__ == '__main__':
-	if os.path.isfile('.dev'):
-		app.debug = True
-		app.run(host='127.0.0.1', port=7890)
-	else:
-		app.run(host='0.0.0.0', port=7890)
+
+	parser = argparse.ArgumentParser()
+
+	parser.add_argument('--host', help='host to listen for connections',
+		default='127.0.0.1')
+	parser.add_argument('--port', help='port to listen for connections',
+		default=7890, type=int)
+	parser.add_argument('--debug', help='run clogd in debug mode',
+		default=False, action='store_true')
+
+	args = parser.parse_args()
+
+	app.debug = args.debug
+	app.run(host=args.host, port=args.port)
