@@ -31,12 +31,7 @@
 from flask import Flask, request, render_template, send_file
 from contextlib import contextmanager
 
-import threading
-import sqlite3
-import os
-import re
-import datetime
-import os.path
+import threading, sqlite3, os, re, datetime, os.path
 
 app = Flask(__name__)
 local = threading.local()
