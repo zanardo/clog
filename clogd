@@ -29,7 +29,7 @@
 #
 
 from bottle import run, local, route, view, get, post, redirect, \
-	response, request
+	response, request, static_file
 from contextlib import contextmanager
 
 import threading, sqlite3, os, re, datetime, os.path, argparse
@@ -70,6 +70,11 @@ def timestamp_to_show(timestamp):
 	else:
 		return '-'
 
+@route('/static/:filename')
+def static(filename):
+    assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
+    return static_file('static/%s' % filename, root='.')
+
 @get('/job/<id>')
 def joboutput(id):
 	if not re.match(r'^[a-f0-9-]{36}$', id):
@@ -100,8 +105,13 @@ def jobhistory(computername, computeruser, script):
 		history.append(h)
 	return dict(history=history)
 
-@get('/jobs')
+@get('/')
 @view('jobs')
+def index():
+	return dict()
+
+@get('/jobs')
+@view('jobstable')
 def jobs():
 	c = getcursor()
 	c.execute("""
