@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+	<title>clog admin</title>
+</head>
+<body>
+
+<a href="/">clog</a>
+
+<h1>clog admin</h1>
+
+<h2>Users</h2>
+<form method="post" action="/admin/save-new-user" enctype="multipart/form-data">
+	<input type="text" name="username" size="30">
+	<input type="submit" name="submit" value="new user">
+</form>
+<p>
+<table border="1">
+	<th>user</th><th>admin</th><th>actions</th>
+	%for user in users:
+		<tr>
+			<td> {{user['username']}} </td>
+			<td>
+				%if user['is_admin']:
+					yes
+				%else:
+					no
+				%end
+			</td>
+			<td>
+				%if ctx['username'] != user['username']:
+					<a href="/admin/remove-user/{{user['username']}}">remove</a>
+					<a href="/admin/force-new-password/{{user['username']}}">force new password</a>
+					%if user['is_admin']:
+						<a href="/admin/change-user-admin-status/{{user['username']}}/0">remove admin perms</a>
+					%else:
+						<a href="/admin/change-user-admin-status/{{user['username']}}/1">make admin</a>
+					%end
+				%end
+			</td>
+		</tr>
+	%end
+</table>
+
+%include version ctx
+
+</body>
+</html>
