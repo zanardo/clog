@@ -28,6 +28,8 @@
 # This is clog client. See https://github.com/zanardo/clog for more details.
 #
 
+__VERSION__ = '0.1dev'
+
 import sys, os, os.path, subprocess, uuid, time, json, platform
 import getpass, argparse, urllib, urllib2, logging
 
@@ -65,7 +67,7 @@ def createpaths(queue_path=None, scripts_path=None):
 
 # Run a script (clog run).
 def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
-	log.info("running script %s", script)
+	log.info("running clog %s script %s", __VERSION__, script)
 	sp = os.path.join(scripts_path, script)
 	if not os.path.isfile(sp):
 		log.critical("file %s not found!", sp)
@@ -98,7 +100,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 
 # Send queue (clog send-queue).
 def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
-	log.info("starting queue dispatch")
+	log.info("starting clog %s queue dispatch", __VERSION__)
 	os.chdir(queue_path)
 	for f in os.listdir('.'):
 		if len(f) == 41 and f.endswith('.meta'):
