@@ -24,7 +24,15 @@
 		<td>{{ h['script'] }}</td>
 		<td>{{ h['datestarted'] }}</td>
 		<td>{{ h['datefinished'] }}</td>
-		<td><a href="/job/{{ h['id'] }}">{{ h['status'] }}</a></td>
+		%if h['status'] == 'OK':
+		<td bgcolor="#009933">
+		%else:
+		<td bgcolor="#FF6666">
+		%end
+			<a href="/job/{{ h['id'] }}">
+				{{ h['status'] }}
+			</a>
+		</td>
 		<td>{{ h['duration'] }}s</td>
 	</tr>
 	%end

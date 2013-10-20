@@ -13,7 +13,13 @@
 		<td><a href="/jobs/{{job['computername']}}/{{job['computeruser']}}/{{job['script'] }}/">{{ job['script'] }}</a></td>
 		<td>{{ job['lastsuccess'] }}</td>
 		<td>{{ job['lastfail'] }}</td>
-		<td>{{ job['laststatus'] }}</td>
+		%if job['laststatus'] == 'OK':
+		<td bgcolor="#009933">
+		%else:
+		<td bgcolor="#FF6666">
+		%end
+			{{ job['laststatus'] }}
+		</td>
 		<td>{{ job['lastduration'] }}s</td>
 	</tr>
 	%end
