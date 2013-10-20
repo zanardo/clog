@@ -1,8 +1,10 @@
 function updateScreen(jobs) {
 	document.getElementById('jobs').innerHTML = jobs;
+	document.getElementById('jobs').style.opacity = 1.0;
 }
 
 function loadJobs() {
+	document.getElementById('jobs').style.opacity = 0.5;
 	var req = XMLHttpRequest();
 	req.open("GET", "/jobs", true);
 	req.onreadystatechange = function() {
