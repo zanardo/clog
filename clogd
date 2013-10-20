@@ -28,6 +28,8 @@
 # This is clog server. See https://github.com/zanardo/clog for more details.
 #
 
+__VERSION__ = '0.1dev'
+
 from bottle import run, local, route, view, get, post, redirect, \
 	response, request, static_file
 from contextlib import contextmanager
@@ -40,6 +42,9 @@ log = logging.getLogger(__name__)
 
 config = {}
 config['dbname'] = 'clogd.db'
+
+def getctx():
+	return dict(version=__VERSION__)
 
 def getdb():
     # Return a database connection handle per thread
@@ -107,12 +112,12 @@ def jobhistory(computername, computeruser, script):
 		h['datefinished'] = timestamp_to_show(h['datefinished'])
 		h['duration'] = "%.3f" % h['duration']
 		history.append(h)
-	return dict(history=history)
+	return dict(history=history, ctx=getctx())
 
 @get('/')
 @view('jobs')
 def index():
-	return dict()
+	return dict(ctx=getctx())
 
 @get('/jobs')
 @view('jobstable')
@@ -210,6 +215,6 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
-	log.info('starting clogd on %s:%d', args.host, args.port)
+	log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
 	run(host=args.host, port=args.port, debug=args.debug,
 	    server='waitress', reloader=args.debug)
