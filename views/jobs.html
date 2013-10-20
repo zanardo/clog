@@ -8,6 +8,9 @@
 <body onload="load()">
 
 <div align="right">
+	%if ctx['isadmin'] == 1:
+	<a href="/admin">admin</a> |
+	%end
 	<a href="/change-password">password</a> | 
 	<a href="/logout">logout</a>
 </div>

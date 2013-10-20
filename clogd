@@ -37,7 +37,8 @@ from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
 
-import threading, sqlite3, os, re, datetime, os.path, argparse, logging
+import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
+	random
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
 	'%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -47,7 +48,8 @@ config = {}
 config['dbname'] = 'clogd.db'
 
 def getctx():
-	return dict(version=__VERSION__)
+	return dict(version=__VERSION__, username=currentuser(),
+		isadmin=userisadmin(currentuser()))
 
 def getdb():
     # Return a database connection handle per thread
@@ -140,6 +142,70 @@ def makesession(user):
         c.execute("insert into sessions (session_id, username) "
             "values (:session_id, :user)", locals())
     return session_id
+
+@get('/admin')
+@view('admin')
+@requires_auth
+@requires_admin
+def admin():
+    c = getcursor()
+    c.execute("select username, is_admin from users "
+        "order by username")
+    users = []
+    for user in c:
+        user = dict(user)
+        users.append(user)
+    return dict(ctx=getctx(), users=users)
+
+@get('/admin/remove-user/:username')
+@requires_auth
+@requires_admin
+def removeuser(username):
+    if username == currentuser():
+        return 'cant remove current user!'
+    with db_trans() as c:
+        c.execute("delete from users where username = :username", locals())
+    return redirect('/admin')
+
+@post('/admin/save-new-user')
+@requires_auth
+@requires_admin
+def newuser():
+    assert 'username' in request.forms
+    username = request.forms.username
+    if username.strip() == '':
+        return 'invalid user!'
+    password = str(int(random.random() * 999999))
+    sha1password = sha1(password).hexdigest()
+    with db_trans() as c:
+        c.execute("insert into users (username, password, is_admin ) "
+            "values (:username, :sha1password, 0)", locals())
+    return u'user %s created with password %s' % ( username, password )
+
+@get('/admin/force-new-password/:username')
+@requires_auth
+@requires_admin
+def forceuserpassword(username):
+    password = str(int(random.random() * 999999))
+    sha1password = sha1(password).hexdigest()
+    if username == currentuser():
+        return 'cant change password for current user!'
+    with db_trans() as c:
+        c.execute("update users set password = :sha1password "
+            "where username = :username", locals())
+    return u'user %s had password changed to: %s' % ( username, password )
+
+@get('/admin/change-user-admin-status/:username/:status')
+@requires_auth
+@requires_admin
+def changeuseradminstatus(username, status):
+    if username == currentuser():
+        return 'cant change admin status for current user!'
+    assert status in ( '0', '1' )
+    with db_trans() as c:
+        c.execute("update users set is_admin = :status "
+            "where username = :username", locals())
+    return redirect('/admin')
 
 @get('/login')
 @view('login')
