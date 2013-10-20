@@ -32,7 +32,11 @@ from bottle import run, local, route, view, get, post, redirect, \
 	response, request, static_file
 from contextlib import contextmanager
 
-import threading, sqlite3, os, re, datetime, os.path, argparse
+import threading, sqlite3, os, re, datetime, os.path, argparse, logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
+	'%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+log = logging.getLogger(__name__)
 
 config = {}
 config['dbname'] = 'clogd.db'
@@ -172,6 +176,9 @@ def newjob():
 	computeruser = request.forms.username
 	ip = request.remote_addr
 	rid = request.forms.id
+	log.info('new job status from %s@%s/%s (%s)', computeruser, computername,
+		script, ip)
+	log.info('  id: %s', rid)
 	if not re.match(r'^[a-f0-9-]{36}$', rid):
 		raise ValueError('invalid rid')
 	with open(config['dbname'] + '.logs/' + rid, 'w') as fp:
@@ -203,5 +210,6 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
+	log.info('starting clogd on %s:%d', args.host, args.port)
 	run(host=args.host, port=args.port, debug=args.debug,
 	    server='waitress', reloader=args.debug)
