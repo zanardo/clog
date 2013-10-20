@@ -17,5 +17,5 @@ function loadJobs() {
 
 function load() {
 	loadJobs();
-	window.setInterval(loadJobs, 10000);
+	window.setInterval(loadJobs, 60000);
 }
