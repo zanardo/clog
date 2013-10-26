@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+	<title>config job {{ctx['script']}}</title>
+	<link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+
+<a href="/">clog</a>
+<br>
+<a href="/jobs/{{ctx['computername']}}/{{ctx['computeruser']}}/{{ctx['script']}}/">job history</a>
+
+<h1>config job - {{ctx['computeruser']+'@'+ctx['computername']+'/'+ctx['script']}}</h1>
+
+<form method="post" action="/save-daystokeep/{{ctx['computername']}}/{{ctx['computeruser']}}/{{ctx['script']}}/" enctype="multipart/form-data">
+	Days to keep job history: <input type="text" name="daystokeep" size="10" value="{{daystokeep}}">
+	<input type="submit" name="submit" value="save">
+</form>
+
+%include version ctx
+
+</body>
+</html>

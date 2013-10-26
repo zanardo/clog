@@ -284,6 +284,10 @@ def joboutput(id):
 @view('history')
 @requires_auth
 def jobhistory(computername, computeruser, script):
+    ctx = getctx()
+    ctx['computername'] = computername
+    ctx['computeruser'] = computeruser
+    ctx['script'] = script
     c = getcursor()
     c.execute("select id, computername, computeruser, script, "
         "datestarted, datefinished, status, datefinished-datestarted as duration "
@@ -299,7 +303,54 @@ def jobhistory(computername, computeruser, script):
         h['datefinished'] = timestamp_to_show(h['datefinished'])
         h['duration'] = "%.3f" % h['duration']
         history.append(h)
-    return dict(history=history, ctx=getctx())
+    return dict(history=history, ctx=ctx)
+
+@get('/config-job/<computername>/<computeruser>/<script>/')
+@view('config-job')
+@requires_auth
+@requires_admin
+def configjob(computername, computeruser, script):
+    ctx = getctx()
+    ctx['computername'] = computername
+    ctx['computeruser'] = computeruser
+    ctx['script'] = script
+    daystokeep = 30
+    c = getcursor()
+    c.execute('select daystokeep from jobconfig where '
+        'computername=:computername and '
+        'computeruser=:computeruser and '
+        'script=:script', locals())
+    r = c.fetchone()
+    if r:
+        daystokeep = r['daystokeep']
+    return dict(ctx=ctx, daystokeep=daystokeep)
+
+@post('/save-daystokeep/<computername>/<computeruser>/<script>/')
+@requires_auth
+@requires_admin
+def savedaystokeep(computername, computeruser, script):
+    assert 'daystokeep' in request.forms
+    daystokeep = request.forms.daystokeep
+    assert re.match(r'^\d+$', daystokeep)
+    c = getcursor()
+    c.execute('select daystokeep from jobconfig where '
+        'computername=:computername and '
+        'computeruser=:computeruser and '
+        'script=:script', locals())
+    r = c.fetchone()
+    if r:
+        with db_trans() as c:
+            c.execute('update jobconfig set daystokeep=:daystokeep '
+                'where computername=:computername and '
+                'computeruser=:computeruser and '
+                'script=:script', locals())
+    else:
+        with db_trans() as c:
+            c.execute('insert into jobconfig values ( '
+                ':computername, :computeruser, :script, '
+                ':daystokeep)', locals())
+    return redirect('/config-job/' + computername + '/' + 
+        computeruser + '/' + script + '/')
 
 @get('/')
 @view('jobs')

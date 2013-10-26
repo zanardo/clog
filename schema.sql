@@ -21,5 +21,13 @@ CREATE TABLE sessions (
 	username text NOT NULL
 );
 
+CREATE TABLE jobconfig (
+	computername text not null,
+	computeruser text not null,
+	script not null,
+	daystokeep int not null,
+	PRIMARY KEY(computername, computeruser, script)
+);
+
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );

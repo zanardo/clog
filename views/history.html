@@ -6,6 +6,12 @@
 </head>
 <body>
 
+<div align="right" style="float: right;">
+	%if ctx['isadmin'] == 1:
+		<a href="/config-job/{{ctx['computername']}}/{{ctx['computeruser']}}/{{ctx['script']}}/">config this job</a>
+	%end
+</div>
+
 <a href="/">clog</a>
 
 <h1>clog job history</h1>
