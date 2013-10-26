@@ -31,17 +31,17 @@
 __VERSION__ = '0.2dev'
 
 from bottle import run, local, route, view, get, post, redirect, \
-	response, request, static_file
+    response, request, static_file
 from contextlib import contextmanager
 from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-	random, bottle, time
+    random, bottle, time
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
-	'%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+    '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
 log = logging.getLogger(__name__)
 
 config = {}
@@ -51,8 +51,8 @@ config['dbname'] = 'clogd.db'
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 
 def getctx():
-	return dict(version=__VERSION__, username=currentuser(),
-		isadmin=userisadmin(currentuser()))
+    return dict(version=__VERSION__, username=currentuser(),
+        isadmin=userisadmin(currentuser()))
 
 def getdb():
     # Return a database connection handle per thread
@@ -69,8 +69,8 @@ def getcursor():
 
 @contextmanager
 def db_trans():
-	# Open a new database transaction and commit on context
-	# exit, or rollback in case anything fails.
+    # Open a new database transaction and commit on context
+    # exit, or rollback in case anything fails.
     dbh = getdb()
     c = dbh.cursor()
     try:
@@ -82,10 +82,10 @@ def db_trans():
         dbh.commit()
 
 def timestamp_to_show(timestamp):
-	if timestamp:
-		return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-	else:
-		return '-'
+    if timestamp:
+        return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        return '-'
 
 def requires_auth(f):
     @wraps(f)
@@ -272,164 +272,164 @@ def static(filename):
 @get('/job/<id>')
 @requires_auth
 def joboutput(id):
-	if not re.match(r'^[a-f0-9-]{36}$', id):
-		raise ValueError('invalid id')
-	output = ''
-	with open(os.path.join('clogd.db.logs', id), 'r') as fp:
-		output = fp.read()
-	response.content_type = 'text/plain'
-	return output
+    if not re.match(r'^[a-f0-9-]{36}$', id):
+        raise ValueError('invalid id')
+    output = ''
+    with open(os.path.join('clogd.db.logs', id), 'r') as fp:
+        output = fp.read()
+    response.content_type = 'text/plain'
+    return output
 
 @get('/jobs/<computername>/<computeruser>/<script>/')
 @view('history')
 @requires_auth
 def jobhistory(computername, computeruser, script):
-	c = getcursor()
-	c.execute("select id, computername, computeruser, script, "
-		"datestarted, datefinished, status, datefinished-datestarted as duration "
-		"from jobhistory "
-		"where computername=:computername "
-		"  and computeruser=:computeruser "
-		"  and script=:script "
-		"order by computername, computeruser, script, datestarted desc", (locals()))
-	history = []
-	for hist in c:
-		h = dict(hist)
-		h['datestarted'] = timestamp_to_show(h['datestarted'])
-		h['datefinished'] = timestamp_to_show(h['datefinished'])
-		h['duration'] = "%.3f" % h['duration']
-		history.append(h)
-	return dict(history=history, ctx=getctx())
+    c = getcursor()
+    c.execute("select id, computername, computeruser, script, "
+        "datestarted, datefinished, status, datefinished-datestarted as duration "
+        "from jobhistory "
+        "where computername=:computername "
+        "  and computeruser=:computeruser "
+        "  and script=:script "
+        "order by computername, computeruser, script, datestarted desc", (locals()))
+    history = []
+    for hist in c:
+        h = dict(hist)
+        h['datestarted'] = timestamp_to_show(h['datestarted'])
+        h['datefinished'] = timestamp_to_show(h['datefinished'])
+        h['duration'] = "%.3f" % h['duration']
+        history.append(h)
+    return dict(history=history, ctx=getctx())
 
 @get('/')
 @view('jobs')
 @requires_auth
 def index():
-	return dict(ctx=getctx())
+    return dict(ctx=getctx())
 
 @get('/jobs')
 @view('jobstable')
 @requires_auth
 def jobs():
-	c = getcursor()
-	c.execute("""
-		select j.computername
-		, j.computeruser
-		, j.script
-		, ( select max(datestarted)
-			from jobhistory
-			where computername=j.computername
-				and computeruser=j.computeruser
-				and script=j.script
-				and status='OK'
-		  ) as lastsuccess
-		, ( select max(datestarted)
-			from jobhistory
-			where computername=j.computername
-				and computeruser=j.computeruser
-				and script=j.script
-				and status='FAIL'
-		  ) as lastfail
-		, ( select status
-			from jobhistory
-			where computername=j.computername
-				and computeruser=j.computeruser
-				and script=j.script
-			order by datestarted desc
-			limit 1
-		  ) as laststatus
-		, ( select datefinished-datestarted
-			from jobhistory
-			where computername=j.computername
-				and computeruser=j.computeruser
-				and script=j.script
-			order by datestarted desc
-			limit 1
-		  ) as lastduration
-		from jobhistory as j
-		group by j.computername, j.computeruser, j.script
-		order by j.computername, j.computeruser, j.script ;
-	""")
-	jobs = []
-	for job in c:
-		j = dict(job)
-		j['lastsuccess'] = timestamp_to_show(j['lastsuccess'])
-		j['lastfail'] = timestamp_to_show(j['lastfail'])
-		j['lastduration'] = "%.3f" % j['lastduration']
-		jobs.append(j)
-	return dict(jobs=jobs)
+    c = getcursor()
+    c.execute("""
+        select j.computername
+        , j.computeruser
+        , j.script
+        , ( select max(datestarted)
+            from jobhistory
+            where computername=j.computername
+                and computeruser=j.computeruser
+                and script=j.script
+                and status='OK'
+          ) as lastsuccess
+        , ( select max(datestarted)
+            from jobhistory
+            where computername=j.computername
+                and computeruser=j.computeruser
+                and script=j.script
+                and status='FAIL'
+          ) as lastfail
+        , ( select status
+            from jobhistory
+            where computername=j.computername
+                and computeruser=j.computeruser
+                and script=j.script
+            order by datestarted desc
+            limit 1
+          ) as laststatus
+        , ( select datefinished-datestarted
+            from jobhistory
+            where computername=j.computername
+                and computeruser=j.computeruser
+                and script=j.script
+            order by datestarted desc
+            limit 1
+          ) as lastduration
+        from jobhistory as j
+        group by j.computername, j.computeruser, j.script
+        order by j.computername, j.computeruser, j.script ;
+    """)
+    jobs = []
+    for job in c:
+        j = dict(job)
+        j['lastsuccess'] = timestamp_to_show(j['lastsuccess'])
+        j['lastfail'] = timestamp_to_show(j['lastfail'])
+        j['lastduration'] = "%.3f" % j['lastduration']
+        jobs.append(j)
+    return dict(jobs=jobs)
 
 @post('/jobs')
 def newjob():
-	start_time = request.forms.start_time
-	end_time = request.forms.end_time
-	status = request.forms.status
-	script = request.forms.script
-	output = request.forms.output.encode('utf-8')
-	computername = request.forms.computername
-	computeruser = request.forms.username
-	ip = request.remote_addr
-	rid = request.forms.id
-	log.info('new job status from %s@%s/%s (%s)', computeruser, computername,
-		script, ip)
-	log.info('  id: %s', rid)
-	if not re.match(r'^[a-f0-9-]{36}$', rid):
-		raise ValueError('invalid rid')
-	with open(config['dbname'] + '.logs/' + rid, 'w') as fp:
-		fp.write(output)
-	try:
-		with db_trans() as c:
-			c.execute("insert into jobhistory (id, script, computername, "
-				"ip, computeruser, datestarted, datefinished, "
-				"status) values (:rid, :script, :computername, :ip, "
-				":computeruser, :start_time, :end_time, :status)",
-				locals())
-	except sqlite3.IntegrityError:
-		# Ignoring duplicate insertion.
-		return 'ok'
-	else:
-		return 'ok'
+    start_time = request.forms.start_time
+    end_time = request.forms.end_time
+    status = request.forms.status
+    script = request.forms.script
+    output = request.forms.output.encode('utf-8')
+    computername = request.forms.computername
+    computeruser = request.forms.username
+    ip = request.remote_addr
+    rid = request.forms.id
+    log.info('new job status from %s@%s/%s (%s)', computeruser, computername,
+        script, ip)
+    log.info('  id: %s', rid)
+    if not re.match(r'^[a-f0-9-]{36}$', rid):
+        raise ValueError('invalid rid')
+    with open(config['dbname'] + '.logs/' + rid, 'w') as fp:
+        fp.write(output)
+    try:
+        with db_trans() as c:
+            c.execute("insert into jobhistory (id, script, computername, "
+                "ip, computeruser, datestarted, datefinished, "
+                "status) values (:rid, :script, :computername, :ip, "
+                ":computeruser, :start_time, :end_time, :status)",
+                locals())
+    except sqlite3.IntegrityError:
+        # Ignoring duplicate insertion.
+        return 'ok'
+    else:
+        return 'ok'
 
 # Delete output files from clogd.db.log that are not referenced
 # on database.
 def purge_logs():
-	path = config['dbname'] + '.logs'
-	c = getcursor()
-	for out in os.listdir(path):
-		c.execute("select count(*) from jobhistory where id=:out", locals())
-		r = c.fetchone()[0]
-		if r == 0:
-			log.debug('maint_thread: removing stale log %s', out)
-			os.unlink(os.path.join(path, out))
+    path = config['dbname'] + '.logs'
+    c = getcursor()
+    for out in os.listdir(path):
+        c.execute("select count(*) from jobhistory where id=:out", locals())
+        r = c.fetchone()[0]
+        if r == 0:
+            log.debug('maint_thread: removing stale log %s', out)
+            os.unlink(os.path.join(path, out))
 
 # Long running maintenance thread.
 def maint_thread():
     log.info('maint_thread: starting maintenance thread')
     while True:
-		log.info('maint_thread: starting maintenance')
-		purge_logs()
-		log.info('maint_thread: finishing maintenance')
-		time.sleep(1800)
+        log.info('maint_thread: starting maintenance')
+        purge_logs()
+        log.info('maint_thread: finishing maintenance')
+        time.sleep(1800)
 
 
 if __name__ == '__main__':
 
-	parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-	parser.add_argument('--host', help='host to listen for connections',
-		default='127.0.0.1')
-	parser.add_argument('--port', help='port to listen for connections',
-		default=7890, type=int)
-	parser.add_argument('--debug', help='run clogd in debug mode',
-		default=False, action='store_true')
+    parser.add_argument('--host', help='host to listen for connections',
+        default='127.0.0.1')
+    parser.add_argument('--port', help='port to listen for connections',
+        default=7890, type=int)
+    parser.add_argument('--debug', help='run clogd in debug mode',
+        default=False, action='store_true')
 
-	args = parser.parse_args()
+    args = parser.parse_args()
 
-	# Starting maintenance thread
-	t = threading.Thread(target=maint_thread)
-	t.daemon = True
-	t.start()
+    # Starting maintenance thread
+    t = threading.Thread(target=maint_thread)
+    t.daemon = True
+    t.start()
 
-	log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
-	run(host=args.host, port=args.port, debug=args.debug,
-	    server='waitress', reloader=args.debug)
+    log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
+    run(host=args.host, port=args.port, debug=args.debug,
+        server='waitress', reloader=args.debug)
