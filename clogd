@@ -38,7 +38,7 @@ from hashlib import sha1
 from uuid import uuid4
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-	random, bottle
+	random, bottle, time
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
 	'%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -390,6 +390,27 @@ def newjob():
 	else:
 		return 'ok'
 
+# Delete output files from clogd.db.log that are not referenced
+# on database.
+def purge_logs():
+	path = config['dbname'] + '.logs'
+	c = getcursor()
+	for out in os.listdir(path):
+		c.execute("select count(*) from jobhistory where id=:out", locals())
+		r = c.fetchone()[0]
+		if r == 0:
+			log.debug('maint_thread: removing stale log %s', out)
+			os.unlink(os.path.join(path, out))
+
+# Long running maintenance thread.
+def maint_thread():
+    log.info('maint_thread: starting maintenance thread')
+    while True:
+		log.info('maint_thread: starting maintenance')
+		purge_logs()
+		log.info('maint_thread: finishing maintenance')
+		time.sleep(1800)
+
 
 if __name__ == '__main__':
 
@@ -403,6 +424,11 @@ if __name__ == '__main__':
 		default=False, action='store_true')
 
 	args = parser.parse_args()
+
+	# Starting maintenance thread
+	t = threading.Thread(target=maint_thread)
+	t.daemon = True
+	t.start()
 
 	log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
 	run(host=args.host, port=args.port, debug=args.debug,
