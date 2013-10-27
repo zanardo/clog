@@ -6,6 +6,7 @@ CREATE TABLE jobhistory (
 	computeruser text not null,
 	datestarted timestamp not null,
 	datefinished timestamp not null,
+	duration float not null,
 	status integer not null
 );
 

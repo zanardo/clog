@@ -89,7 +89,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
         fp.flush()
     qcp = os.path.join(queue_path, rid)
     with open(qcp + ".tmp", "w") as fp:
-        json.dump(dict(start_time=st, end_time=et,
+        json.dump(dict(start_time=st, end_time=et, duration=(et-st),
             status='OK' if ret == 0 else 'FAIL', script=script,
             computername=strenc(platform.node()),
             username=strenc(getpass.getuser())), fp)
