@@ -331,7 +331,11 @@ def configjob(computername, computeruser, script):
 def savedaystokeep(computername, computeruser, script):
     assert 'daystokeep' in request.forms
     daystokeep = request.forms.daystokeep
-    assert re.match(r'^\d+$', daystokeep)
+    if not re.match(r'^\d+$', daystokeep):
+        return 'invalid argument'
+    daystokeep = int(daystokeep)
+    if daystokeep < 1:
+        return 'days to keep must be >= 1'
     c = getcursor()
     c.execute('select daystokeep from jobconfig where '
         'computername=:computername and '
