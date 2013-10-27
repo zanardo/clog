@@ -455,15 +455,17 @@ def purge_sessions():
 
 # Delete output files from clogd.db.log that are not referenced
 # on database.
+lockPurgeLogs = threading.Lock()
 def purge_logs():
     path = config['dbname'] + '.logs'
     c = getcursor()
-    for out in os.listdir(path):
-        c.execute("select count(*) from jobhistory where id=:out", locals())
-        r = c.fetchone()[0]
-        if r == 0:
-            log.debug('maint_thread: removing stale log %s', out)
-            os.unlink(os.path.join(path, out))
+    with lockPurgeLogs:
+        for out in os.listdir(path):
+            c.execute("select count(*) from jobhistory where id=:out", locals())
+            r = c.fetchone()[0]
+            if r == 0:
+                log.debug('maint_thread: removing stale log %s', out)
+                os.unlink(os.path.join(path, out))
 
 # Long running maintenance thread.
 def maint_thread():
