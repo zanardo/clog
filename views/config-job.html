@@ -17,6 +17,16 @@
 	<input type="submit" name="submit" value="save">
 </form>
 
+<p>
+
+<form method="post" action="/save-alertemails/{{ctx['computername']}}/{{ctx['computeruser']}}/{{ctx['script']}}/" enctype="multipart/form-data">
+	Notify these e-mails on job failure (write one per line): <br>
+	<textarea name="emails" rows="3" cols="80">{{emails}}</textarea>
+	<br>
+	<input type="submit" name="submitemails" value="save">
+</form>
+
+
 %include version ctx
 
 </body>

@@ -321,7 +321,14 @@ def configjob(computername, computeruser, script):
     r = c.fetchone()
     if r:
         daystokeep = r['daystokeep']
-    return dict(ctx=ctx, daystokeep=daystokeep)
+    c.execute('select email from jobconfigalert where '
+        'computername=:computername and '
+        'computeruser=:computeruser and '
+        'script=:script', locals())
+    emails = []
+    for r in c:
+        emails.append(r['email'])
+    return dict(ctx=ctx, daystokeep=daystokeep, emails="\n".join(emails))
 
 @post('/save-daystokeep/<computername>/<computeruser>/<script>/')
 @requires_auth
@@ -351,6 +358,23 @@ def savedaystokeep(computername, computeruser, script):
             c.execute('insert into jobconfig values ( '
                 ':computername, :computeruser, :script, '
                 ':daystokeep)', locals())
+    return redirect('/config-job/' + computername + '/' + 
+        computeruser + '/' + script + '/')
+
+@post('/save-alertemails/<computername>/<computeruser>/<script>/')
+@requires_auth
+@requires_admin
+def savealertemails(computername, computeruser, script):
+    assert 'emails' in request.forms
+    with db_trans() as c:
+        c.execute('delete from jobconfigalert where '
+                'computername=:computername and '
+                'computeruser=:computeruser and '
+                'script=:script', locals())
+        for email in request.forms.emails.split():
+            c.execute('insert into jobconfigalert values ('
+                ':computername, :computeruser, :script, '
+                ':email)', locals())     
     return redirect('/config-job/' + computername + '/' + 
         computeruser + '/' + script + '/')
 

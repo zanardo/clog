@@ -30,5 +30,13 @@ CREATE TABLE jobconfig (
 	PRIMARY KEY(computername, computeruser, script)
 );
 
+CREATE TABLE jobconfigalert (
+	computername text not null,
+	computeruser text not null,
+	script text not null,
+	email text not null,
+	PRIMARY KEY(computername, computeruser, script, email)
+);
+
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
