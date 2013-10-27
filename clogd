@@ -445,6 +445,14 @@ def newjob():
     else:
         return 'ok'
 
+# Delete login sessions older than 7 days
+def purge_sessions():
+    with db_trans() as c:
+        c.execute("delete from sessions where julianday('now') - "
+            "julianday(date_login) > 7")
+        if c.rowcount > 0:
+            log.info('maint_thread: purged %s login sessions', c.rowcount)
+
 # Delete output files from clogd.db.log that are not referenced
 # on database.
 def purge_logs():
@@ -463,6 +471,7 @@ def maint_thread():
     while True:
         log.info('maint_thread: starting maintenance')
         purge_logs()
+        purge_sessions()
         log.info('maint_thread: finishing maintenance')
         time.sleep(1800)
 
