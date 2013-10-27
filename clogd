@@ -468,30 +468,34 @@ def purge_logs():
                 os.unlink(os.path.join(path, out))
 
 # Delete old entries on jobhistory from database.
+lockPurgeHistory = threading.Lock()
 def purge_jobhistory():
     c = getcursor()
-    c.execute("select computername, computeruser, script from "
-        "jobhistory group by computername, computeruser, script")
-    for hist in c:
-        computername = hist['computername']
-        computeruser = hist['computeruser']
-        script = hist['script']
-        c2 = getcursor()
-        c2.execute("select daystokeep from jobconfig where "
-            "computeruser=:computeruser and "
-            "computername=:computername and "
-            "script=:script", locals())
-        daystokeep = 30
-        r = c2.fetchone()
-        if r:
-            daystokeep = r['daystokeep']
-        with db_trans() as c3:
-            c3.execute("delete from jobhistory where "
-                "julianday(datefinished)-julianday(datestarted) "
-                "> :daystokeep", locals())
-            if c3.rowcount > 0:
-                log.debug("maint_thread: purged %s entries for jobhistory", 
-                    c3.rowcount)
+    with lockPurgeHistory:
+        c.execute("select computername, computeruser, script from "
+            "jobhistory group by computername, computeruser, script")
+        for hist in c:
+            computername = hist['computername']
+            computeruser = hist['computeruser']
+            script = hist['script']
+            c2 = getcursor()
+            c2.execute("select daystokeep from jobconfig where "
+                "computeruser=:computeruser and "
+                "computername=:computername and "
+                "script=:script", locals())
+            daystokeep = 30
+            r = c2.fetchone()
+            if r:
+                daystokeep = r['daystokeep']
+            with db_trans() as c3:
+                c3.execute("delete from jobhistory where "
+                    "julianday('now')-julianday(datestarted) > :daystokeep and "
+                    "computername=:computername "
+                    "and computeruser=:computeruser and "
+                    "script=:script", locals())
+                if c3.rowcount > 0:
+                    log.debug("maint_thread: purged %s entries for jobhistory", 
+                        c3.rowcount)
 
 # Long running maintenance thread.
 def maint_thread():
