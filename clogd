@@ -81,12 +81,6 @@ def db_trans():
     finally:
         dbh.commit()
 
-def timestamp_to_show(timestamp):
-    if timestamp:
-        return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-    else:
-        return '-'
-
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
