@@ -290,7 +290,8 @@ def jobhistory(computername, computeruser, script):
     ctx['script'] = script
     c = getcursor()
     c.execute("select id, computername, computeruser, script, "
-        "datestarted, datefinished, status, datefinished-datestarted as duration "
+        "datestarted, datefinished, status, "
+        "(julianday(datefinished)-julianday(datestarted))*(3600*24) as duration "
         "from jobhistory "
         "where computername=:computername "
         "  and computeruser=:computeruser "
@@ -299,8 +300,6 @@ def jobhistory(computername, computeruser, script):
     history = []
     for hist in c:
         h = dict(hist)
-        h['datestarted'] = timestamp_to_show(h['datestarted'])
-        h['datefinished'] = timestamp_to_show(h['datefinished'])
         h['duration'] = "%.3f" % h['duration']
         history.append(h)
     return dict(history=history, ctx=ctx)
@@ -393,7 +392,7 @@ def jobs():
             order by datestarted desc
             limit 1
           ) as laststatus
-        , ( select datefinished-datestarted
+        , ( select (julianday(datefinished)-julianday(datestarted))*(3600*24)
             from jobhistory
             where computername=j.computername
                 and computeruser=j.computeruser
@@ -408,16 +407,17 @@ def jobs():
     jobs = []
     for job in c:
         j = dict(job)
-        j['lastsuccess'] = timestamp_to_show(j['lastsuccess'])
-        j['lastfail'] = timestamp_to_show(j['lastfail'])
+        if j['lastsuccess'] is None: j['lastsuccess'] = ''
+        if j['lastfail'] is None: j['lastfail'] = ''
+
         j['lastduration'] = "%.3f" % j['lastduration']
         jobs.append(j)
     return dict(jobs=jobs)
 
 @post('/jobs')
 def newjob():
-    start_time = request.forms.start_time
-    end_time = request.forms.end_time
+    start_time = datetime.datetime.fromtimestamp(int(float(request.forms.start_time)))
+    end_time = datetime.datetime.fromtimestamp(int(float(request.forms.end_time)))
     status = request.forms.status
     script = request.forms.script
     output = request.forms.output.encode('utf-8')
