@@ -79,7 +79,7 @@ def createpaths(queue_path=None, scripts_path=None):
 
 # Run a script (clog run).
 def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
-    log.info("running clog %s script %s", __VERSION__, script)
+    log.info('starting script "%s"', script)
     sp = os.path.join(scripts_path, script)
     if not os.path.isfile(sp):
         log.critical("file %s not found!", sp)
@@ -99,15 +99,17 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
                 break
         et = time.time()
         fp.flush()
+    duration = et - st
+    status = 'OK' if ret == 0 else 'FAIL'
     qcp = os.path.join(queue_path, rid)
     with open(qcp + ".tmp", "w") as fp:
-        json.dump(dict(start_time=st, end_time=et, duration=(et-st),
-            status='OK' if ret == 0 else 'FAIL', script=script,
-            computername=getcomputer(),
+        json.dump(dict(start_time=st, end_time=et, duration=duration,
+            status=status, script=script, computername=getcomputer(),
             username=getuser()), fp)
         fp.flush()
     os.rename(qcp + '.tmp', qcp + '.meta')
-    log.info("finished with id = %s", rid)
+    log.info('finished script "%s" on %0.3fsec, status %s', script, duration, status)
+    log.info("queued with identifier %s", rid)
     return rid
 
 # Send queue (clog send-queue).
