@@ -80,37 +80,36 @@ def createpaths(queue_path=None, scripts_path=None):
 # Run a script (clog run).
 def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
     log.info('starting script "%s"', script)
-    sp = os.path.join(scripts_path, script)
-    if not os.path.isfile(sp):
-        log.critical("file %s not found!", sp)
+    script_path = os.path.join(scripts_path, script)
+    if not os.path.isfile(script_path):
+        log.critical("file %s not found!", script_path)
         sys.exit(1)
-    rid = str(uuid.uuid4())
-    qlp = os.path.join(queue_path, "{}.out".format(rid))
-    with open(qlp, "w") as fp:
-        st = time.time()
-        s = subprocess.Popen(sp, stderr=subprocess.STDOUT, bufsize=4096,
-            stdout=subprocess.PIPE)
-        ret = None
+    queue_id = str(uuid.uuid4())
+    queue_base_path = os.path.join(queue_path, queue_id)
+    with open(queue_base_path + '.out', "w") as fp:
+        start_time = time.time()
+        s = subprocess.Popen(script_path, stderr=subprocess.STDOUT,
+            bufsize=4096, stdout=subprocess.PIPE)
+        return_code = None
         while True:
             chunk = strenc(s.stdout.read(4096), encoding=encoding)
             fp.write(chunk)
-            ret = s.poll()
-            if ret is not None:
+            return_code = s.poll()
+            if return_code is not None:
                 break
-        et = time.time()
+        end_time = time.time()
         fp.flush()
-    duration = et - st
-    status = 'OK' if ret == 0 else 'FAIL'
-    qcp = os.path.join(queue_path, rid)
-    with open(qcp + ".tmp", "w") as fp:
-        json.dump(dict(start_time=st, end_time=et, duration=duration,
-            status=status, script=script, computername=getcomputer(),
-            username=getuser()), fp)
+    duration = end_time - start_time
+    status = 'OK' if return_code == 0 else 'FAIL'
+    with open(queue_base_path + ".tmp", "w") as fp:
+        json.dump(dict(start_time=start_time, end_time=end_time,
+            duration=duration, status=status, script=script,
+            computername=getcomputer(), username=getuser()), fp)
         fp.flush()
-    os.rename(qcp + '.tmp', qcp + '.meta')
+    os.rename(queue_base_path + '.tmp', queue_base_path + '.meta')
     log.info('finished script "%s" on %0.3fsec, status %s', script, duration, status)
-    log.info("queued with identifier %s", rid)
-    return rid
+    log.info("queued with identifier %s", queue_id)
+    return queue_id
 
 # Send queue (clog send-queue).
 def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
