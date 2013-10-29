@@ -32,9 +32,9 @@
 		<td>{{ h['datestarted'] }}</td>
 		<td>{{ h['datefinished'] }}</td>
 		%if h['status'] == 'OK':
-		<td>
+		<td class="tdstatus">
 		%else:
-		<td bgcolor="#FF6666">
+		<td bgcolor="#FF6666" class="tdstatus">
 		%end
 			<a href="/jobs/{{h['computername']}}/{{h['computeruser']}}/{{h['script']}}/{{ h['id'] }}">
 				{{ h['status'] }}

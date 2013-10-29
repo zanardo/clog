@@ -14,9 +14,9 @@
 		<td>{{ job['lastsuccess'] }}</td>
 		<td>{{ job['lastfail'] }}</td>
 		%if job['laststatus'] == 'OK':
-		<td>
+		<td class="tdstatus">
 		%else:
-		<td bgcolor="#FF6666">
+		<td bgcolor="#FF6666" class="tdstatus">
 		%end
 			{{ job['laststatus'] }}
 		</td>
