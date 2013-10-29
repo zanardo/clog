@@ -263,9 +263,9 @@ def static(filename):
     assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
     return static_file('static/%s' % filename, root='.')
 
-@get('/job/<id>')
+@get('/jobs/<computername>/<computeruser>/<script>/<id>')
 @requires_auth
-def joboutput(id):
+def joboutput(computername, computeruser, script, id):
     if not re.match(r'^[a-f0-9-]{36}$', id):
         raise ValueError('invalid id')
     output = ''
