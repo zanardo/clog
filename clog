@@ -55,6 +55,10 @@ def getcomputer():
     comp = comp.split('.')[0].lower()
     return strenc(comp)
 
+# Get user name.
+def getuser():
+    return strenc(getpass.getuser())
+
 # Get default user clog scripts path.
 def getscriptspath():
     return os.path.join(gethome(), '.clog-scripts')
@@ -100,7 +104,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
         json.dump(dict(start_time=st, end_time=et, duration=(et-st),
             status='OK' if ret == 0 else 'FAIL', script=script,
             computername=getcomputer(),
-            username=strenc(getpass.getuser())), fp)
+            username=getuser()), fp)
         fp.flush()
     os.rename(qcp + '.tmp', qcp + '.meta')
     log.info("finished with id = %s", rid)
