@@ -115,16 +115,16 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
     log.info("starting queue dispatch to %s", server)
     os.chdir(queue_path)
-    for f in os.listdir('.'):
-        if len(f) == 41 and f.endswith('.meta'):
-            rid = f[:36]
-            log.info("sending job %s", rid)
-            with open(f, 'r') as fp:
+    for queue_file in os.listdir('.'):
+        if len(queue_file) == 41 and queue_file.endswith('.meta'):
+            queue_id = queue_file[:36]
+            log.info("sending job %s", queue_id)
+            with open(queue_file, 'r') as fp:
                 meta = json.load(fp)
-            with open(rid + '.out', 'r') as fp:
+            with open(queue_id + '.out', 'r') as fp:
                 # If output file is bigger than max_size, we will read only
                 # max_size bytes from the bottom.
-                file_size = os.path.getsize(rid + '.out')
+                file_size = os.path.getsize(queue_id + '.out')
                 if file_size > max_size:
                     log.info("output too large, stripping %d bytes",
                             file_size-max_size)
@@ -132,7 +132,7 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
                     meta['output'] = fp.read(max_size)
                 else:
                     meta['output'] = fp.read()
-            meta['id'] = rid
+            meta['id'] = queue_id
             data = urllib.urlencode(meta)
             req = urllib2.Request(server, data)
             req.add_header('Content-Type',
@@ -144,8 +144,8 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
                 raise
             else:
                 if res == 'ok':
-                    os.unlink("{}.out".format(rid))
-                    os.unlink("{}.meta".format(rid))
+                    os.unlink("{}.out".format(queue_id))
+                    os.unlink("{}.meta".format(queue_id))
                 else:
                     log.error("server response: %s", res)
     log.info("finished queue dispatch")
