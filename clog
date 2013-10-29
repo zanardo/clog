@@ -114,7 +114,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
 
 # Send queue (clog send-queue).
 def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
-    log.info("starting clog %s queue dispatch", __VERSION__)
+    log.info("starting queue dispatch to %s", server)
     os.chdir(queue_path)
     for f in os.listdir('.'):
         if len(f) == 41 and f.endswith('.meta'):
