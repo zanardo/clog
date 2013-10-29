@@ -47,6 +47,14 @@ def strenc(s, encoding='UTF-8'):
 def gethome():
     return os.path.expanduser('~')
 
+# Get computer name (without domain).
+def getcomputer():
+    comp = platform.node()
+    if comp is None or comp == '':
+        raise ValueError('Invalid computer name')
+    comp = comp.split('.')[0].lower()
+    return strenc(comp)
+
 # Get default user clog scripts path.
 def getscriptspath():
     return os.path.join(gethome(), '.clog-scripts')
@@ -91,7 +99,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
     with open(qcp + ".tmp", "w") as fp:
         json.dump(dict(start_time=st, end_time=et, duration=(et-st),
             status='OK' if ret == 0 else 'FAIL', script=script,
-            computername=strenc(platform.node()),
+            computername=getcomputer(),
             username=strenc(getpass.getuser())), fp)
         fp.flush()
     os.rename(qcp + '.tmp', qcp + '.meta')
