@@ -7,7 +7,7 @@ CREATE TABLE jobhistory (
 	datestarted timestamp not null,
 	datefinished timestamp not null,
 	duration float not null,
-	status integer not null
+	status text not null
 );
 
 CREATE TABLE users (
