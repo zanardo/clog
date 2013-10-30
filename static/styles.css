@@ -12,7 +12,7 @@ table, th, tr, td {
 }
 
 tr:nth-child(2n+3) {
-	background-color: #D1D1D1;
+	background-color: #DEDEDE;
 }
 
 .tdstatus {
