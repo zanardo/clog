@@ -14,13 +14,13 @@
 		<td>{{ job['lastsuccess'] }}</td>
 		<td>{{ job['lastfail'] }}</td>
 		%if job['laststatus'] == 'ok':
-		<td class="tdstatus">
+		<td class="tdcenter">
 		%else:
-		<td bgcolor="#FF6666" class="tdstatus">
+		<td bgcolor="#FF6666" class="tdcenter">
 		%end
 			{{ job['laststatus'] }}
 		</td>
-		<td>{{ job['lastduration'] }}s</td>
+		<td class="tdright">{{ job['lastduration'] }}s</td>
 	</tr>
 	%end
 </table>

@@ -29,6 +29,10 @@ a:hover {
 	color: black;
 }
 
-.tdstatus {
+.tdcenter {
 	text-align: center;
+}
+
+.tdright {
+	text-align: right;
 }

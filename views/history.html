@@ -32,15 +32,15 @@
 		<td>{{ h['datestarted'] }}</td>
 		<td>{{ h['datefinished'] }}</td>
 		%if h['status'] == 'ok':
-		<td class="tdstatus">
+		<td class="tdcenter">
 		%else:
-		<td bgcolor="#FF6666" class="tdstatus">
+		<td bgcolor="#FF6666" class="tdcenter">
 		%end
 			<a href="/jobs/{{h['computername']}}/{{h['computeruser']}}/{{h['script']}}/{{ h['id'] }}">
 				{{ h['status'] }}
 			</a>
 		</td>
-		<td>{{ h['duration'] }}s</td>
+		<td class="tdright">{{ h['duration'] }}s</td>
 	</tr>
 	%end
 </table>
