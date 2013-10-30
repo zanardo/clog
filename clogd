@@ -392,14 +392,14 @@ def jobs():
             where computername=j.computername
                 and computeruser=j.computeruser
                 and script=j.script
-                and status='OK'
+                and status='ok'
           ) as lastsuccess
         , ( select max(datestarted)
             from jobhistory
             where computername=j.computername
                 and computeruser=j.computeruser
                 and script=j.script
-                and status='FAIL'
+                and status='fail'
           ) as lastfail
         , ( select status
             from jobhistory

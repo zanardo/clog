@@ -100,7 +100,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
         end_time = time.time()
         fp.flush()
     duration = end_time - start_time
-    status = 'OK' if return_code == 0 else 'FAIL'
+    status = 'ok' if return_code == 0 else 'fail'
     with open(queue_base_path + ".tmp", "w") as fp:
         json.dump(dict(start_time=start_time, end_time=end_time,
             duration=duration, status=status, script=script,
