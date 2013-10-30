@@ -9,10 +9,15 @@ table, th, tr, td {
 	border: 0;
 	padding: 2px 4px 2px 4px;
 	text-align: left;
+	border: 1px solid #A1A1A1;
 }
 
-tr:nth-child(2n+3) {
+tr:nth-child(2n-1) {
 	background-color: #DEDEDE;
+}
+
+th {
+	text-align: center;
 }
 
 .tdstatus {
