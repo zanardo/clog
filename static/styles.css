@@ -20,6 +20,15 @@ th {
 	text-align: center;
 }
 
+a {
+	color: #636363;
+	text-decoration: none;
+}
+
+a:hover {
+	color: black;
+}
+
 .tdstatus {
 	text-align: center;
 }
