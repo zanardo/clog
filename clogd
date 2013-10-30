@@ -461,7 +461,28 @@ def newjob():
         # Ignoring duplicate insertion.
         return 'ok'
     else:
+        if status == 'fail':
+            emails = getalertemails(computername, computeruser, script)
+            with db_trans() as c:
+                for email in emails:
+                    c.execute("insert into jobalert (computername, "
+                        "computeruser, script, id, email) values ("
+                        ":computername, :computeruser, :script, "
+                        ":rid, :email)", locals())
+
         return 'ok'
+
+# Get notification e-mails for a job.
+def getalertemails(computername, computeruser, script):
+    c = getcursor()
+    c.execute("select email from jobconfigalert where "
+        "computername=:computername and "
+        "computeruser=:computeruser and "
+        "script=:script", locals())
+    emails = []
+    for row in c:
+        emails.append(row['email'])
+    return emails
 
 # Delete login sessions older than 7 days
 def purge_sessions():
