@@ -51,8 +51,9 @@ config['dbname'] = 'clogd.db'
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 
 def getctx():
-    return dict(version=__VERSION__, username=currentuser(),
-        isadmin=userisadmin(currentuser()))
+    user = currentuser()
+    user_is_admin = userisadmin(user)
+    return dict(version=__VERSION__, username=user, isadmin=user_is_admin)
 
 def getdb():
     # Return a database connection handle per thread
