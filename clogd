@@ -550,11 +550,11 @@ def send_alert(email, computername, computeruser, script, status, output):
     subject = ''
     body = ''
     if status == 'fail':
-        subject = 'clog: job failed for {}@{}:{}'.format(computername,
-            computeruser, script)
+        subject = 'clog: job {} failed for {}@{}'.format(script, computeruser,
+            computername)
     elif status == 'ok':
-        subject = 'clog: job back to normal for {}@{}:{}'.format(computername,
-            computeruser, script)
+        subject = 'clog: job {} back to normal for {}@{}'.format(script,
+            computeruser, computername)
     body += '\n\nThis is an automatic notification send by ' + \
             'clog (https://github.com/zanardo/clog)'
     s = subprocess.Popen(['mail', '-s', subject, email], stdin=subprocess.PIPE)
