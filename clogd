@@ -36,9 +36,10 @@ from contextlib import contextmanager
 from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
+from email.mime.text import MIMEText
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-    random, bottle, time
+    random, bottle, time, smtplib
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -581,8 +582,32 @@ def purge_jobhistory():
                         c3.rowcount)
 
 def send_alert(email, computername, computeruser, output, status, datestarted,
-        datefinished, duration):
-    raise
+        datefinished, duration, script):
+    subject = ''
+    body = ''
+    smtp = ''
+    fromalert = ''
+    c = getcursor()
+    c.execute('select smtp, fromalert from config')
+    r = c.fetchone()
+    smtp = r['smtp']
+    fromalert = r['fromalert']
+    if status == 'fail':
+        subject = 'clog: job failed for {}@{}:{}'.format(computername,
+            computeruser, script)
+    elif status == 'ok':
+        subject = 'clog: job back to normal for {}@{}:{}'.format(computername,
+            computeruser, script)
+    body += '\n\nThis is an automatic notification send by ' + \
+            'clog (https://github.com/zanardo/clog'
+    msg = MIMEText(body.encode('utf-8'))
+    msg.set_charset('utf-8')
+    msg['Subject'] = subject
+    msg['From'] = fromalert
+    msg['to'] = email
+    s = smtplib.SMTP(smtp, timeout=10)
+    s.sendmail(fromalert, email, msg.as_string())
+    s.quit()
 
 lockSendAlerts = threading.Lock()
 def send_alerts():
@@ -611,13 +636,14 @@ def send_alerts():
                 pass
             try:
                 log.info("sending alert to %s (job %s)", email, id)
-                send_alert(email=r['email'], computername=r['computername'],
-                    computeruser=r['computeruser'], status=r['status'],
-                    output=output, datestarted=r['datestarted'],
-                    datefinished=r['datefinished'], duration=r['duration'])
-            except:
+                send_alert(r['email'], r['computername'],
+                    r['computeruser'], output, r['status'], 
+                    r['datestarted'], r['datefinished'], r['duration'],
+                    r['script'])
+            except Exception, ex:
                 with db_trans() as c:
                     log.info("  alert failed!")
+                    log.debug(ex)
                     c.execute("update jobalert set numretries=numretries+1, "
                         "datelasttry=datetime('now', 'localtime') where "
                         "id=:id and email=:email", locals())
@@ -643,7 +669,6 @@ def alert_thread():
     while True:
         send_alerts()
         time.sleep(60)
-
 
 if __name__ == '__main__':
 
