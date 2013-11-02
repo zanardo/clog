@@ -554,27 +554,49 @@ def purge_jobhistory():
 
 def send_alert(email, computername, computeruser, output, status, datestarted,
         datefinished, duration):
-    pass
+    raise
 
 lockSendAlerts = threading.Lock()
 def send_alerts():
     with lockSendAlerts:
         with db_trans() as c:
             c.execute("delete from jobalert where numretries > 24")
-            c.execute("select a.computeruser, a.computeruser, a.script, a.id, "
-                "a.email, a.datelasttry, a.numretries, h.status, h.datestarted, "
-                "h.datefinished, h.duration from jobalert as a "
-                "inner join jobhistory as h on h.id=a.id where "
-                "a.datelasttry is null or (julianday('now', 'localtime') - "
-                "julianday(a.datelasttry))*24 > 1")
-            for r in c:
-                output = ''
+            c.execute("delete from jobalert where id not in ( "
+                "select id from jobhistory)")
+            c.execute("delete from jobalert where julianday('now', 'localtime')"
+                "-julianday(datelasttry) > 1")
+        c = getcursor()
+        c.execute("select a.computername, a.computeruser, a.script, a.id, "
+            "a.email, a.datelasttry, a.numretries, h.status, h.datestarted, "
+            "h.datefinished, h.duration from jobalert as a "
+            "inner join jobhistory as h on h.id=a.id where "
+            "a.datelasttry is null or (julianday('now', 'localtime') - "
+            "julianday(a.datelasttry))*24 > 1")
+        for r in c:
+            output = ''
+            email = r['email']
+            id = r['id']
+            try:
                 with open(os.path.join(config['dbname']+'.logs', r['id'])) as fp:
                     output = fp.read()
+            except:
+                pass
+            try:
+                log.info("sending alert to %s (job %s)", email, id)
                 send_alert(email=r['email'], computername=r['computername'],
                     computeruser=r['computeruser'], status=r['status'],
                     output=output, datestarted=r['datestarted'],
                     datefinished=r['datefinished'], duration=r['duration'])
+            except:
+                with db_trans() as c:
+                    log.info("  alert failed!")
+                    c.execute("update jobalert set numretries=numretries+1, "
+                        "datelasttry=datetime('now', 'localtime') where "
+                        "id=:id and email=:email", locals())
+            else:
+                with db_trans() as c:
+                    c.execute("delete from jobalert where id=:id and "
+                        "email=:email", locals())
 
 # Long running maintenance thread.
 def maint_thread():
