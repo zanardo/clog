@@ -563,6 +563,12 @@ def maint_thread():
         log.info('maint_thread: finishing maintenance')
         time.sleep(1800)
 
+# Long running alert thread.
+def alert_thread():
+    log.info("alert_thread: starting notification thread")
+    while True:
+        time.sleep(60)
+
 
 if __name__ == '__main__':
 
@@ -581,6 +587,11 @@ if __name__ == '__main__':
     t = threading.Thread(target=maint_thread)
     t.daemon = True
     t.start()
+
+    # Starting e-mail notification thread
+    t2 = threading.Thread(target=alert_thread)
+    t2.daemon = True
+    t2.start()
 
     log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
     run(host=args.host, port=args.port, debug=args.debug,
