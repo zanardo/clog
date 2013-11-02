@@ -5,7 +5,7 @@ function updateScreen(jobs) {
 
 function loadJobs() {
 	document.getElementById('jobs').style.opacity = 0.5;
-	var req = XMLHttpRequest();
+	var req = new XMLHttpRequest();
 	req.open("GET", "/jobs", true);
 	req.onreadystatechange = function() {
 		if(req.readyState == 4 && req.status == 200) {
