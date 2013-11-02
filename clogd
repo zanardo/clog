@@ -39,7 +39,7 @@ from uuid import uuid4
 from email.mime.text import MIMEText
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-    random, bottle, time, smtplib
+    random, bottle, time, smtplib, subprocess
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -153,35 +153,7 @@ def admin():
     for user in c:
         user = dict(user)
         users.append(user)
-    smtp = ''
-    fromalert = ''
-    c.execute("select smtp, fromalert from config")
-    r = c.fetchone()
-    if r:
-        smtp = r['smtp']
-        fromalert = r['fromalert']
-    return dict(ctx=getctx(), users=users, smtp=smtp, fromalert=fromalert)
-
-@post('/admin/save-notification')
-@requires_auth
-@requires_admin
-def newuser():
-    assert 'smtp' in request.forms
-    assert 'fromalert' in request.forms
-    smtp = request.forms.smtp
-    fromalert = request.forms.fromalert
-    c = getcursor()
-    c.execute("select count(*) as c from config")
-    r = c.fetchone()
-    if r['c'] == 0:
-        with db_trans() as c:
-            c.execute("insert into config (smtp, fromalert) "
-                "values ( :smtp, :fromalert)", locals())
-    else:
-        with db_trans() as c:
-            c.execute("update config set smtp=:smtp, "
-                "fromalert=:fromalert", locals())
-    return redirect('/admin')
+    return dict(ctx=getctx(), users=users)
 
 @get('/admin/remove-user/:username')
 @requires_auth
@@ -492,13 +464,10 @@ def newjob():
     else:
         emails = getalertemails(computername, computeruser, script)
         if status == 'fail':
-            with db_trans() as c:
-                for email in emails:
-                    log.info("  job failed, queueing alert to %s", email)
-                    c.execute("insert into jobalert (computername, "
-                        "computeruser, script, id, email) values ("
-                        ":computername, :computeruser, :script, "
-                        ":rid, :email)", locals())
+            for email in emails:
+                log.info("  job failed, sending alert to %s", email)
+                send_alert(email, computername, computeruser, script,
+                    status, output)
         elif status == 'ok':
             c = getcursor()
             c.execute("select status from jobhistory "
@@ -507,14 +476,10 @@ def newjob():
                 "order by datestarted desc limit 1 offset 1", locals())
             r = c.fetchone()
             if r and r['status'] == 'fail':
-                with db_trans() as c:
-                    for email in emails:
-                        log.info("  job ok, queueing alert to %s", email)
-                        c.execute("insert into jobalert (computername, "
-                            "computeruser, script, id, email) values ("
-                            ":computername, :computeruser, :script, "
-                            ":rid, :email)", locals())
-
+                for email in emails:
+                    log.info("  job ok, sending alert to %s", email)
+                    send_alert(email, computername, computeruser, script,
+                        status, output)
         return 'ok'
 
 # Get notification e-mails for a job.
@@ -581,17 +546,9 @@ def purge_jobhistory():
                     log.debug("maint_thread: purged %s entries for jobhistory", 
                         c3.rowcount)
 
-def send_alert(email, computername, computeruser, output, status, datestarted,
-        datefinished, duration, script):
+def send_alert(email, computername, computeruser, script, status, output):
     subject = ''
     body = ''
-    smtp = ''
-    fromalert = ''
-    c = getcursor()
-    c.execute('select smtp, fromalert from config')
-    r = c.fetchone()
-    smtp = r['smtp']
-    fromalert = r['fromalert']
     if status == 'fail':
         subject = 'clog: job failed for {}@{}:{}'.format(computername,
             computeruser, script)
@@ -599,58 +556,9 @@ def send_alert(email, computername, computeruser, output, status, datestarted,
         subject = 'clog: job back to normal for {}@{}:{}'.format(computername,
             computeruser, script)
     body += '\n\nThis is an automatic notification send by ' + \
-            'clog (https://github.com/zanardo/clog'
-    msg = MIMEText(body.encode('utf-8'))
-    msg.set_charset('utf-8')
-    msg['Subject'] = subject
-    msg['From'] = fromalert
-    msg['to'] = email
-    s = smtplib.SMTP(smtp, timeout=10)
-    s.sendmail(fromalert, email, msg.as_string())
-    s.quit()
-
-lockSendAlerts = threading.Lock()
-def send_alerts():
-    with lockSendAlerts:
-        with db_trans() as c:
-            c.execute("delete from jobalert where numretries > 24")
-            c.execute("delete from jobalert where id not in ( "
-                "select id from jobhistory)")
-            c.execute("delete from jobalert where julianday('now', 'localtime')"
-                "-julianday(datelasttry) > 1")
-        c = getcursor()
-        c.execute("select a.computername, a.computeruser, a.script, a.id, "
-            "a.email, a.datelasttry, a.numretries, h.status, h.datestarted, "
-            "h.datefinished, h.duration from jobalert as a "
-            "inner join jobhistory as h on h.id=a.id where "
-            "a.datelasttry is null or (julianday('now', 'localtime') - "
-            "julianday(a.datelasttry))*24 > 1")
-        for r in c:
-            output = ''
-            email = r['email']
-            id = r['id']
-            try:
-                with open(os.path.join(config['dbname']+'.logs', r['id'])) as fp:
-                    output = fp.read()
-            except:
-                pass
-            try:
-                log.info("sending alert to %s (job %s)", email, id)
-                send_alert(r['email'], r['computername'],
-                    r['computeruser'], output, r['status'], 
-                    r['datestarted'], r['datefinished'], r['duration'],
-                    r['script'])
-            except Exception, ex:
-                with db_trans() as c:
-                    log.info("  alert failed!")
-                    log.debug(ex)
-                    c.execute("update jobalert set numretries=numretries+1, "
-                        "datelasttry=datetime('now', 'localtime') where "
-                        "id=:id and email=:email", locals())
-            else:
-                with db_trans() as c:
-                    c.execute("delete from jobalert where id=:id and "
-                        "email=:email", locals())
+            'clog (https://github.com/zanardo/clog)'
+    s = subprocess.Popen(['mail', '-s', subject, email], stdin=subprocess.PIPE)
+    s.communicate(body)
 
 # Long running maintenance thread.
 def maint_thread():
@@ -663,12 +571,6 @@ def maint_thread():
         log.info('maint_thread: finishing maintenance')
         time.sleep(1800)
 
-# Long running alert thread.
-def alert_thread():
-    log.info("alert_thread: starting notification thread")
-    while True:
-        send_alerts()
-        time.sleep(60)
 
 if __name__ == '__main__':
 
@@ -687,11 +589,6 @@ if __name__ == '__main__':
     t = threading.Thread(target=maint_thread)
     t.daemon = True
     t.start()
-
-    # Starting e-mail notification thread
-    t2 = threading.Thread(target=alert_thread)
-    t2.daemon = True
-    t2.start()
 
     log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
     run(host=args.host, port=args.port, debug=args.debug,
