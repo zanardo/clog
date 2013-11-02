@@ -463,23 +463,24 @@ def newjob():
         return 'ok'
     else:
         emails = getalertemails(computername, computeruser, script)
-        if status == 'fail':
-            for email in emails:
-                log.info("  job failed, sending alert to %s", email)
-                send_alert(email, computername, computeruser, script,
-                    status, output)
-        elif status == 'ok':
-            c = getcursor()
-            c.execute("select status from jobhistory "
-                "where computername=:computername and "
-                "computeruser=:computeruser and script=:script "
-                "order by datestarted desc limit 1 offset 1", locals())
-            r = c.fetchone()
-            if r and r['status'] == 'fail':
+        if emails:
+            if status == 'fail':
                 for email in emails:
-                    log.info("  job ok, sending alert to %s", email)
+                    log.info("  job failed, sending alert to %s", email)
                     send_alert(email, computername, computeruser, script,
                         status, output)
+            elif status == 'ok':
+                c = getcursor()
+                c.execute("select status from jobhistory "
+                    "where computername=:computername and "
+                    "computeruser=:computeruser and script=:script "
+                    "order by datestarted desc limit 1 offset 1", locals())
+                r = c.fetchone()
+                if r and r['status'] == 'fail':
+                    for email in emails:
+                        log.info("  job ok, sending alert to %s", email)
+                        send_alert(email, computername, computeruser, script,
+                            status, output)
         return 'ok'
 
 # Get notification e-mails for a job.
