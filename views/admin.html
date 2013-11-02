@@ -43,6 +43,16 @@
 	%end
 </table>
 
+<h2>Notifications</h2>
+
+<form method="post" action="/admin/save-notification" enctype="multipart/form-data">
+       SMTP Server: <input type="text" name="smtp" size="30" value="{{smtp}}">
+       <br>
+       From E-Mail Address: <input type="text" name="fromalert" size="30" value={{fromalert}}>
+       <br>
+       <input type="submit" name="submit" value="save">
+</form>
+
 %include version ctx
 
 </body>

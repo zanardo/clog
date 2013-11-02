@@ -49,5 +49,10 @@ CREATE TABLE jobalert (
 	PRIMARY KEY(computername, computeruser, script, id, email)
 );
 
+CREATE TABLE config (
+       smtp text,
+       fromalert text
+);
+
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );

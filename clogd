@@ -152,7 +152,35 @@ def admin():
     for user in c:
         user = dict(user)
         users.append(user)
-    return dict(ctx=getctx(), users=users)
+    smtp = ''
+    fromalert = ''
+    c.execute("select smtp, fromalert from config")
+    r = c.fetchone()
+    if r:
+        smtp = r['smtp']
+        fromalert = r['fromalert']
+    return dict(ctx=getctx(), users=users, smtp=smtp, fromalert=fromalert)
+
+@post('/admin/save-notification')
+@requires_auth
+@requires_admin
+def newuser():
+    assert 'smtp' in request.forms
+    assert 'fromalert' in request.forms
+    smtp = request.forms.smtp
+    fromalert = request.forms.fromalert
+    c = getcursor()
+    c.execute("select count(*) as c from config")
+    r = c.fetchone()
+    if r['c'] == 0:
+        with db_trans() as c:
+            c.execute("insert into config (smtp, fromalert) "
+                "values ( :smtp, :fromalert)", locals())
+    else:
+        with db_trans() as c:
+            c.execute("update config set smtp=:smtp, "
+                "fromalert=:fromalert", locals())
+    return redirect('/admin')
 
 @get('/admin/remove-user/:username')
 @requires_auth
