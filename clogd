@@ -552,6 +552,7 @@ def send_alert(email, computername, computeruser, script, status, output):
     if status == 'fail':
         subject = 'clog: job {} failed for {}@{}'.format(script, computeruser,
             computername)
+        body = output
     elif status == 'ok':
         subject = 'clog: job {} back to normal for {}@{}'.format(script,
             computeruser, computername)
