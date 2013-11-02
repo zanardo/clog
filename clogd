@@ -36,10 +36,9 @@ from contextlib import contextmanager
 from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
-from email.mime.text import MIMEText
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-    random, bottle, time, smtplib, subprocess
+    random, bottle, time, subprocess
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
