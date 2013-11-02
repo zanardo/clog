@@ -35,3 +35,17 @@ a:hover {
 .tdright {
 	text-align: right;
 }
+
+.tdfail {
+	/*background-color: #FF6666;*/
+}
+
+.tdfail a {
+	color: #EB0000;
+	font-weight: bold;
+}
+
+.tdfail {
+	color: #EB0000;
+	font-weight: bold;
+}

@@ -16,7 +16,7 @@
 		%if job['laststatus'] == 'ok':
 		<td class="tdcenter">
 		%else:
-		<td bgcolor="#FF6666" class="tdcenter">
+		<td class="tdfail tdcenter">
 		%end
 			{{ job['laststatus'] }}
 		</td>

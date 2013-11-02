@@ -34,7 +34,7 @@
 		%if h['status'] == 'ok':
 		<td class="tdcenter">
 		%else:
-		<td bgcolor="#FF6666" class="tdcenter">
+		<td class="tdcenter tdfail">
 		%end
 			<a href="/jobs/{{h['computername']}}/{{h['computeruser']}}/{{h['script']}}/{{ h['id'] }}">
 				{{ h['status'] }}
