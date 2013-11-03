@@ -1,5 +1,7 @@
+@import url(http://fonts.googleapis.com/css?family=Droid+Sans:400,700);
+
 body {
-	font-family: Verdana, Arial, sans-serif;
+	font-family: "Droid Sans", Verdana, Arial, sans-serif;
 	background-color: #E6E6E6;
 	font-size: 14px;
 }
