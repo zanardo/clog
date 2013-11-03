@@ -336,23 +336,10 @@ def savedaystokeep(computername, computeruser, script):
     daystokeep = int(daystokeep)
     if daystokeep < 1:
         return 'days to keep must be >= 1'
-    c = getcursor()
-    c.execute('select daystokeep from jobconfig where '
-        'computername=:computername and '
-        'computeruser=:computeruser and '
-        'script=:script', locals())
-    r = c.fetchone()
-    if r:
-        with db_trans() as c:
-            c.execute('update jobconfig set daystokeep=:daystokeep '
-                'where computername=:computername and '
-                'computeruser=:computeruser and '
-                'script=:script', locals())
-    else:
-        with db_trans() as c:
-            c.execute('insert into jobconfig values ( '
-                ':computername, :computeruser, :script, '
-                ':daystokeep)', locals())
+    with db_trans() as c:
+        c.execute('replace into jobconfig (computername, computeruser, '
+            'script, daystokeep) values (:computername, :computeruser, '
+            ':script, :daystokeep)', locals())
     return redirect('/config-job/' + computername + '/' + 
         computeruser + '/' + script + '/')
 
