@@ -16,3 +16,6 @@ install-cli:
 
 run-server-devel:
 	while :; do ./.venv/bin/python clogd --host 127.0.0.1 --port 6789 --debug ; sleep 0.5 ; done
+
+run-server:
+	./.venv/bin/python clogd --host 0.0.0.0 --port 7890
