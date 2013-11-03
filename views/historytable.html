@@ -10,7 +10,7 @@
 	<tr>
 		<td>{{ h['computername'] }}</td>
 		<td>{{ h['computeruser'] }}</td>
-		<td>{{ h['script'] }}</td>
+		<td><a href="/jobs/{{h['computername']}}/{{h['computeruser']}}/{{h['script'] }}/">{{ h['script'] }}</a></td>
 		<td>{{ h['datestarted'] }}</td>
 		<td>{{ h['datefinished'] }}</td>
 		%if h['status'] == 'ok':
