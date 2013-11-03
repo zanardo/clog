@@ -442,7 +442,7 @@ def jobs():
         jobs.append(j)
     return dict(jobs=jobs)
 
-@post('/jobs')
+@post('/')
 def newjob():
     start_time = datetime.datetime.fromtimestamp(int(float(request.forms.start_time)))
     end_time = datetime.datetime.fromtimestamp(int(float(request.forms.end_time)))
