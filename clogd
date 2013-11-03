@@ -298,6 +298,21 @@ def jobhistory(computername, computeruser, script):
         history.append(h)
     return dict(history=history, ctx=ctx)
 
+@get('/history')
+@view('historytable')
+@requires_auth
+def allhistory():
+    c = getcursor()
+    c.execute("select id, computername, computeruser, script, "
+        "datestarted, datefinished, status, duration "
+        "from jobhistory order by datestarted desc limit 100", locals())
+    history = []
+    for hist in c:
+        h = dict(hist)
+        h['duration'] = "%.3f" % h['duration']
+        history.append(h)
+    return dict(history=history)
+
 @get('/config-job/<computername>/<computeruser>/<script>/')
 @view('config-job')
 @requires_auth
