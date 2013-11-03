@@ -38,7 +38,7 @@ from hashlib import sha1
 from uuid import uuid4
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-    random, bottle, time, subprocess
+    random, bottle, time, subprocess, zlib
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -270,10 +270,18 @@ def joboutput(computername, computeruser, script, id):
     if not re.match(r'^[a-f0-9-]{36}$', id):
         raise ValueError('invalid id')
     output = ''
-    with open(os.path.join('clogd.db.logs', id), 'r') as fp:
-        output = fp.read()
-    response.content_type = 'text/plain'
-    return output
+    c = getcursor()
+    c.execute("select output from jobhistory where "
+        "computername=:computername and "
+        "computeruser=:computeruser and "
+        "script=:script and id=:id", locals())
+    r = c.fetchone()
+    if not r:
+        response.status = 404
+        return 'not found'
+    else:
+        response.content_type = 'text/plain'
+        return zlib.decompress(r['output'])
 
 @get('/jobs/<computername>/<computeruser>/<script>/')
 @view('history')
@@ -442,6 +450,7 @@ def newjob():
     status = request.forms.status
     script = request.forms.script
     output = request.forms.output.encode('utf-8')
+    outputz = buffer(zlib.compress(output))
     computername = request.forms.computername
     computeruser = request.forms.username
     ip = request.remote_addr
@@ -451,15 +460,13 @@ def newjob():
     log.info('  id: %s', rid)
     if not re.match(r'^[a-f0-9-]{36}$', rid):
         raise ValueError('invalid rid')
-    with open(config['dbname'] + '.logs/' + rid, 'w') as fp:
-        fp.write(output)
     try:
         with db_trans() as c:
             c.execute("insert into jobhistory (id, script, computername, "
                 "ip, computeruser, datestarted, datefinished, "
-                "status, duration) values (:rid, :script, :computername, :ip, "
-                ":computeruser, :start_time, :end_time, :status, :duration)",
-                locals())
+                "status, duration, output) values (:rid, :script, :computername, "
+                ":ip, :computeruser, :start_time, :end_time, :status, :duration, "
+                ":outputz)", locals())
     except sqlite3.IntegrityError:
         # Ignoring duplicate insertion.
         return 'ok'
@@ -504,18 +511,6 @@ def purge_sessions():
             "julianday(date_login) > 7")
         if c.rowcount > 0:
             log.info('maint_thread: purged %s login sessions', c.rowcount)
-
-# Delete output files from clogd.db.log that are not referenced
-# on database.
-def purge_logs():
-    path = config['dbname'] + '.logs'
-    c = getcursor()
-    for out in os.listdir(path):
-        c.execute("select count(*) from jobhistory where id=:out", locals())
-        r = c.fetchone()[0]
-        if r == 0:
-            log.debug('maint_thread: removing stale log %s', out)
-            os.unlink(os.path.join(path, out))
 
 # Delete old entries on jobhistory from database.
 def purge_jobhistory():
@@ -567,7 +562,6 @@ def maint_thread():
         log.info('maint_thread: starting maintenance')
         try:
             purge_jobhistory()
-            purge_logs()
             purge_sessions()
         except Exception, ex:
             log.info("maint_thread: error: %s", ex)
