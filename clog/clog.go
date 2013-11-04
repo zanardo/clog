@@ -34,6 +34,14 @@ func main() {
 	flag.StringVar(&scriptsPath, "scripts-path", DefaultScriptsPath(), "scripts path")
 	flag.Parse()
 	CreatePaths()
+	if flag.NArg() == 2 {
+		switch flag.Arg(0) {
+		case "run":
+			runScript(flag.Arg(1))
+		case "send-queue":
+			runQueue(flag.Arg(1))
+		}
+	}
 }
 
 func UserHome() (path string) {
