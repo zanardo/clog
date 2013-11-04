@@ -444,22 +444,43 @@ def jobs():
 
 @post('/')
 def newjob():
-    start_time = datetime.datetime.fromtimestamp(int(float(request.forms.start_time)))
-    end_time = datetime.datetime.fromtimestamp(int(float(request.forms.end_time)))
-    duration = request.forms.duration
-    status = request.forms.status
-    script = request.forms.script
-    output = request.forms.output.encode('utf-8')
-    outputz = buffer(zlib.compress(output))
-    computername = request.forms.computername
-    computeruser = request.forms.username
-    ip = request.remote_addr
     rid = request.forms.id
+    assert re.match(
+        r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$', rid)
+
+    start_time = request.forms.start_time
+    assert re.match(r'^[\d+\.]+$', start_time)
+    start_time = datetime.datetime.fromtimestamp(int(float(start_time)))
+
+    end_time = request.forms.end_time
+    assert re.match(r'^[\d+\.]+$', end_time)
+    end_time = datetime.datetime.fromtimestamp(int(float(end_time)))
+
+    duration = request.forms.duration
+    assert re.match(r'^[0-9\.]+$', duration)
+
+    status = request.forms.status
+    assert status in ( 'fail', 'ok' )
+
+    script = request.forms.script
+    assert re.match(r'^[a-zA-Z0-9\-_\.]+$', script)
+
+    output = request.forms.output or ''
+    output = output.encode('utf-8')
+    outputz = buffer(zlib.compress(output))
+
+    computername = request.forms.computername
+    assert re.match(r'^[a-zA-Z0-9\-\.]+$', computername)
+
+    computeruser = request.forms.username
+    assert re.match(r'^[a-zA-Z0-9\-\.]+$', computeruser)
+
+    ip = request.remote_addr
+
     log.info('new job status from %s@%s/%s (%s)', computeruser, computername,
         script, ip)
     log.info('  id: %s', rid)
-    if not re.match(r'^[a-f0-9-]{36}$', rid):
-        raise ValueError('invalid rid')
+
     try:
         with db_trans() as c:
             c.execute("insert into jobhistory (id, script, computername, "
