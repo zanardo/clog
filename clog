@@ -57,7 +57,7 @@ def getcomputer():
 
 # Get user name.
 def getuser():
-    return strenc(getpass.getuser())
+    return strenc(getpass.getuser().lower())
 
 # Get default user clog scripts path.
 def getscriptspath():
