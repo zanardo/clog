@@ -26,3 +26,16 @@
 	</tr>
 	%end
 </table>
+<p>
+
+%if offset > 0:
+	<a href="javascript:historyPrev()">previous</a> | 
+%else:
+	previous | 
+%end
+
+%if len(history) == 25:
+	<a href="javascript:historyNext()">next</a>
+%else:
+	next
+%end

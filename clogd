@@ -310,16 +310,21 @@ def jobhistory(computername, computeruser, script):
 @view('historytable')
 @requires_auth
 def allhistory():
+    offset = 0
+    if 'offset' in request.query:
+        if re.match(r'^\d+$', request.query.offset):
+            offset = int(request.query.offset)*25
     c = getcursor()
     c.execute("select id, computername, computeruser, script, "
         "datestarted, datefinished, status, duration "
-        "from jobhistory order by datestarted desc limit 100", locals())
+        "from jobhistory order by datestarted desc limit 25 offset :offset",
+            locals())
     history = []
     for hist in c:
         h = dict(hist)
         h['duration'] = "%.3f" % h['duration']
         history.append(h)
-    return dict(history=history)
+    return dict(history=history, offset=offset)
 
 @get('/config-job/<computername>/<computeruser>/<script>/')
 @view('config-job')

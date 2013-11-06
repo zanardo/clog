@@ -1,4 +1,5 @@
-var screen;
+var screen = 'jobs';
+var historyOffset = 0;
 
 function updateScreen(jobs) {
 	document.getElementById('jobstbl').innerHTML = jobs;
@@ -21,6 +22,17 @@ function loadJobs() {
 	req.send(null);
 }
 
+function historyPrev() {
+	historyOffset -= 1;
+	if(historyOffset < 0) historyOffset = 0;
+	loadHistory();
+}
+
+function historyNext() {
+	historyOffset += 1;
+	loadHistory();
+}
+
 function loadHistory() {
 	screen = 'history';
 	document.getElementById('btnloadhistory').style.fontWeight = 'bold';
@@ -28,7 +40,7 @@ function loadHistory() {
 	document.getElementById('jobstbl').style.opacity = 0.5;
 	window.location.hash = '#history';
 	var req = new XMLHttpRequest();
-	req.open("GET", "/history", true);
+	req.open("GET", "/history?offset="+historyOffset, true);
 	req.onreadystatechange = function() {
 		if(req.readyState == 4 && req.status == 200) {
 			updateScreen(req.responseText);
@@ -50,6 +62,7 @@ function load() {
 	screen = 'jobs';
 	if(window.location.hash == '#history') {
 		screen = 'history';
+		historyOffset = 0;
 	}
 	reload();
 	window.setInterval(reload, 60000);
