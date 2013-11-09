@@ -12,3 +12,9 @@ func Test_GenId(t *testing.T) {
 		t.Error("invalid ID", id)
 	}
 }
+
+func Benchmark_GenId(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		GenId()
+	}
+}
