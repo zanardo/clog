@@ -122,8 +122,7 @@ func runScript(script string) {
 	scriptpath := filepath.Join(ScriptsPath(), script)
 	log.Print("running script ", scriptpath)
 
-	id, err := GenId()
-	DieIfErr(err)
+	id := GenId()
 	log.Print("queue id: ", id)
 	queueLogPath := filepath.Join(QueuePath(), id)
 	log.Print("queue path: ", queueLogPath)
@@ -191,17 +190,22 @@ func runQueue(url string) {
 			log.Print("dispatching ", queueId)
 		}
 	}
-
 }
 
-func GenId() (id string, err error) {
-	const validchars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, 16)
+func GenId() (id string) {
+	// Poor man's UUID generator
+	const validchars = "0123456789abcdef"
+	b := make([]byte, 36)
 	if _, err := rand.Read(b); err != nil {
-		return "", err
+		panic(err)
 	}
 	for i, j := range b {
 		b[i] = validchars[j%byte(len(validchars))]
 	}
-	return string(b), nil
+	b[8] = '-'
+	b[13] = '-'
+	b[18] = '-'
+	b[23] = '-'
+	b[14] = '4'
+	return string(b)
 }
