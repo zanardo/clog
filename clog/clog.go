@@ -25,7 +25,7 @@ type RunStat struct {
 	UserName   string
 	StartTime  int64
 	EndTime    int64
-	Duration   int64
+	Duration   float64
 	Status     bool
 }
 
@@ -129,7 +129,9 @@ func runScript(script string) {
 
 	runStat.HostName = HostName()
 	runStat.UserName = UserName()
+
 	runStat.StartTime = time.Now().Unix()
+	startTime := time.Now().UnixNano()
 
 	cmd := exec.Command(scriptpath)
 
@@ -165,11 +167,12 @@ func runScript(script string) {
 		}
 	}
 
+	endTime := time.Now().UnixNano()
 	runStat.EndTime = time.Now().Unix()
-	runStat.Duration = (runStat.EndTime - runStat.StartTime)
+	runStat.Duration = float64(endTime - startTime)/1000000000.0
 
 	log.Print("sucess: ", runStat.Status)
-	log.Print("duration: ", runStat.Duration, "s")
+	log.Print("duration: ", fmt.Sprintf("%0.3fs", runStat.Duration))
 	log.Print("user: ", runStat.UserName)
 	log.Print("hostname: ", runStat.HostName)
 
