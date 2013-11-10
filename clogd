@@ -477,6 +477,10 @@ def newjob():
     computername = request.forms.computername
     computeruser = request.forms.username
 
+    # Windows
+    if '\\' in computeruser:
+        computeruser = computeruser.split('\\')[-1]
+
     ip = request.remote_addr
 
     log.info('new job status from %s@%s/%s (%s)', computeruser, computername,
