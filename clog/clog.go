@@ -170,15 +170,22 @@ func (runStat *RunStat) writeQueueMetadata(queuePath string) {
 }
 
 // Read queue metadata.
-func (runStat *RunStat) readQueueMetadata(queuePath string) {
+func (runStat *RunStat) readQueueMetadata(queuePath string) error {
 	fp, err := os.Open(queuePath)
-	DieIfErr(err)
+	if err != nil {
+		return err
+	}
 	defer fp.Close()
 	b := make([]byte, 64000)
 	n, err := fp.Read(b)
-	DieIfErr(err)
+	if err != nil {
+		return err
+	}
 	err = json.Unmarshal(b[:n], &runStat)
-	DieIfErr(err)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func runScript(script string, queuePath string, scriptsPath string) {
@@ -256,10 +263,12 @@ func runScript(script string, queuePath string, scriptsPath string) {
 func runQueue(serverurl string, queuePath string) {
 	log.Print("target server: ", serverurl)
 	log.Print("queue path: ", queuePath)
+
 	files, err := ioutil.ReadDir(queuePath)
 	if err != nil {
 		panic(err)
 	}
+
 	for _, file := range files {
 		name := file.Name()
 		rxname := regexp.MustCompile(
@@ -268,9 +277,16 @@ func runQueue(serverurl string, queuePath string) {
 			continue
 		}
 		queueId := name[:36]
+
 		log.Print("dispatching ", queueId)
 		runStat := new(RunStat)
-		runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
+
+		err := runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+
 		v := url.Values{}
 		v.Set("start_time", fmt.Sprintf("%d", runStat.StartTime))
 		v.Set("end_time", fmt.Sprintf("%d", runStat.EndTime))
@@ -280,30 +296,59 @@ func runQueue(serverurl string, queuePath string) {
 		v.Set("computername", runStat.HostName)
 		v.Set("username", runStat.UserName)
 		v.Set("id", queueId)
+
 		fp, err := os.Open(path.Join(queuePath, queueId) + ".out")
-		DieIfErr(err)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+		defer fp.Close()
 		fi, err := fp.Stat()
-		DieIfErr(err)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+
 		if fi.Size() > (1024 * 1024) {
 			log.Print(" output too large, truncating")
 			_, err := fp.Seek(fi.Size()-(1024*1024), 0)
-			DieIfErr(err)
+			if err != nil {
+				log.Print(err)
+				continue
+			}
 		}
+
 		bout := make([]byte, 1024*1024)
 		n, err := fp.Read(bout)
-		DieIfErr(err)
+		if err != nil {
+			log.Print(err)
+			return
+		}
 		str := base64.StdEncoding.EncodeToString(bout[:n])
 		v.Set("output", str)
+
 		r, err := http.PostForm(serverurl, v)
-		DieIfErr(err)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
 		b := make([]byte, 4096)
 		n, err = r.Body.Read(b)
-		DieIfErr(err)
+		if err != nil {
+			log.Print(err)
+			return
+		}
 		if r.StatusCode == 200 && string(b[:n]) == "ok" {
 			err = os.Remove(path.Join(queuePath, queueId) + ".out")
-			DieIfErr(err)
+			if err != nil {
+				log.Print(err)
+				return
+			}
 			err = os.Remove(path.Join(queuePath, queueId) + ".meta")
-			DieIfErr(err)
+			if err != nil {
+				log.Print(err)
+				return
+			}
 		} else {
 			log.Println("error -- server response:")
 			log.Print(string(b[:n]))
