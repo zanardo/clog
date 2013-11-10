@@ -198,16 +198,23 @@ func runScript(script string, queuePath string, scriptsPath string) {
 
 	// Merging stdout and stderr.
 	stdout, err := cmd.StdoutPipe()
-	DieIfErr(err)
+	if err != nil {
+		panic(err)
+	}
 	cmd.Stderr = cmd.Stdout
 
 	scanner := bufio.NewScanner(stdout)
 
 	err = cmd.Start()
-	DieIfErr(err)
+	if err != nil {
+		panic(err)
+	}
 
-	queuelog, err := os.OpenFile(queueLogPath+".out", os.O_CREATE|os.O_WRONLY, 0600)
-	DieIfErr(err)
+	queuelog, err := os.OpenFile(queueLogPath+".out", 
+		os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
 
 	log.Print("command output starts")
 	for scanner.Scan() {
