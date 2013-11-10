@@ -218,6 +218,13 @@ func runQueue(serverurl string) {
 			v.Set("id", queueId)
 			fp, err := os.Open(path.Join(queuePath, queueId) + ".out")			
 			DieIfErr(err)
+			fi, err := fp.Stat()
+			DieIfErr(err)
+			if fi.Size() > (1024*1024) {
+				log.Print(" output too large, truncating")
+				_, err := fp.Seek(fi.Size() - (1024*1024), 0)
+				DieIfErr(err)
+			}
 			bout := make([]byte, 1024*1024)
 			n, err := fp.Read(bout)
 			DieIfErr(err)
