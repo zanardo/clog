@@ -318,6 +318,9 @@ func runQueue(serverurl string, queuePath string) {
 			log.Print(err)
 			return
 		}
+
+		fp.Close()
+
 		str := base64.StdEncoding.EncodeToString(bout[:n])
 		v.Set("output", str)
 
