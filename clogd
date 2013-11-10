@@ -475,12 +475,7 @@ def newjob():
     outputz = buffer(zlib.compress(output))
 
     computername = request.forms.computername
-    assert re.match(r'^[a-zA-Z0-9\-\.]+$', computername)
-    computername = computername.lower()
-
     computeruser = request.forms.username
-    assert re.match(r'^[a-zA-Z0-9\-\.]+$', computeruser)
-    computeruser = computeruser.lower()
 
     ip = request.remote_addr
 
