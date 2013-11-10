@@ -188,8 +188,8 @@ func runQueue(url string) {
 	DieIfErr(err)
 	for _, file := range files {
 		name := file.Name()
-		if len(name) == 21 && strings.HasSuffix(name, ".meta") {
-			queueId := name[:16]
+		if len(name) == 41 && strings.HasSuffix(name, ".meta") {
+			queueId := name[:36]
 			log.Print("dispatching ", queueId)
 		}
 	}
