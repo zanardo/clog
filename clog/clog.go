@@ -145,12 +145,6 @@ func CreatePath(path string) {
 	}
 }
 
-func DieIfErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // Saves queue metadata for delivery.
 func (runStat *RunStat) writeQueueMetadata(queuePath string) {
 	fp, err := os.OpenFile(queuePath+".meta.tmp", os.O_CREATE|os.O_WRONLY, 0600)
