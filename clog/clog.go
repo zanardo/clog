@@ -51,9 +51,6 @@ const (
 	Version = "0.3dev"
 )
 
-var queuePath string
-var scriptsPath string
-
 type RunStat struct {
 	ScriptName string
 	HostName   string
@@ -75,17 +72,23 @@ clog [-queue-path <path>] send-queue <server url>
 }
 
 func main() {
+	var queuePath string
+	var scriptsPath string
+
 	flag.Usage = usage
 	flag.StringVar(&queuePath, "queue-path", DefaultQueuePath(), "queue path")
 	flag.StringVar(&scriptsPath, "scripts-path", DefaultScriptsPath(), "scripts path")
 	flag.Parse()
-	CreatePaths()
+
+	CreatePath(queuePath)
+	CreatePath(scriptsPath)
+
 	if flag.NArg() == 2 {
 		switch flag.Arg(0) {
 		case "run":
-			runScript(flag.Arg(1))
+			runScript(flag.Arg(1), queuePath, scriptsPath)
 		case "send-queue":
-			runQueue(flag.Arg(1))
+			runQueue(flag.Arg(1), queuePath)
 		default:
 			usage()
 		}
@@ -94,6 +97,7 @@ func main() {
 	}
 }
 
+// Get current user home path
 func UserHome() (path string) {
 	if me, err := user.Current(); err != nil {
 		panic(err)
@@ -102,6 +106,7 @@ func UserHome() (path string) {
 	}
 }
 
+// Get current user name
 func UserName() (username string) {
 	if me, err := user.Current(); err != nil {
 		panic(err)
@@ -110,6 +115,7 @@ func UserName() (username string) {
 	}
 }
 
+// Get current hostname
 func HostName() (hostname string) {
 	if hostname, err := os.Hostname(); err != nil {
 		panic(err)
@@ -126,15 +132,7 @@ func DefaultQueuePath() (path string) {
 	return filepath.Join(UserHome(), ".clog-queue")
 }
 
-func QueuePath() (path string) {
-	return queuePath
-}
-
-func ScriptsPath() (path string) {
-	return scriptsPath
-}
-
-func createPath(path string) {
+func CreatePath(path string) {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			log.Print("creating path " + path)
@@ -145,11 +143,6 @@ func createPath(path string) {
 			panic("error getting directory information!")
 		}
 	}
-}
-
-func CreatePaths() {
-	createPath(ScriptsPath())
-	createPath(QueuePath())
 }
 
 func DieIfErr(err error) {
@@ -182,17 +175,17 @@ func (runStat *RunStat) readQueueMetadata(queuePath string) {
 	DieIfErr(err)
 }
 
-func runScript(script string) {
+func runScript(script string, queuePath string, scriptsPath string) {
 
 	runStat := new(RunStat)
 	runStat.ScriptName = script
 
-	scriptpath := filepath.Join(ScriptsPath(), script)
+	scriptpath := filepath.Join(scriptsPath, script)
 	log.Print("running script ", scriptpath)
 
 	id := GenId()
 	log.Print("queue id: ", id)
-	queueLogPath := filepath.Join(QueuePath(), id)
+	queueLogPath := filepath.Join(queuePath, id)
 	log.Print("queue path: ", queueLogPath)
 
 	runStat.HostName = HostName()
@@ -245,12 +238,10 @@ func runScript(script string) {
 	log.Print("hostname: ", runStat.HostName)
 
 	runStat.writeQueueMetadata(queueLogPath)
-
 }
 
-func runQueue(serverurl string) {
+func runQueue(serverurl string, queuePath string) {
 	log.Print("target server: ", serverurl)
-	queuePath := QueuePath()
 	log.Print("queue path: ", queuePath)
 	files, err := ioutil.ReadDir(queuePath)
 	DieIfErr(err)
