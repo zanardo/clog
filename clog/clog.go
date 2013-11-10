@@ -62,8 +62,8 @@ type RunStat struct {
 	Status     string
 }
 
-func usage() {
-	fmt.Printf(`%s version %s usage:
+func Usage() {
+	fmt.Printf(`%s version %s Usage:
 
 clog [-queue-path <path> -scripts-path <path>] run <script>
 clog [-queue-path <path>] send-queue <server url>
@@ -76,7 +76,7 @@ func main() {
 	var queuePath string
 	var scriptsPath string
 
-	flag.Usage = usage
+	flag.Usage = Usage
 	flag.StringVar(&queuePath, "queue-path", DefaultQueuePath(), "queue path")
 	flag.StringVar(&scriptsPath, "scripts-path", DefaultScriptsPath(), "scripts path")
 	flag.Parse()
@@ -87,14 +87,14 @@ func main() {
 	if flag.NArg() == 2 {
 		switch flag.Arg(0) {
 		case "run":
-			runScript(flag.Arg(1), queuePath, scriptsPath)
+			RunScript(flag.Arg(1), queuePath, scriptsPath)
 		case "send-queue":
-			runQueue(flag.Arg(1), queuePath)
+			RunQueue(flag.Arg(1), queuePath)
 		default:
-			usage()
+			Usage()
 		}
 	} else {
-		usage()
+		Usage()
 	}
 }
 
@@ -147,7 +147,7 @@ func CreatePath(path string) {
 }
 
 // Saves queue metadata for delivery.
-func (runStat *RunStat) writeQueueMetadata(queuePath string) {
+func (runStat *RunStat) WriteQueueMetadata(queuePath string) {
 	fp, err := os.OpenFile(queuePath+".meta.tmp", os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		panic(err)
@@ -165,7 +165,7 @@ func (runStat *RunStat) writeQueueMetadata(queuePath string) {
 }
 
 // Read queue metadata.
-func (runStat *RunStat) readQueueMetadata(queuePath string) error {
+func (runStat *RunStat) ReadQueueMetadata(queuePath string) error {
 	fp, err := os.Open(queuePath)
 	if err != nil {
 		return err
@@ -183,7 +183,7 @@ func (runStat *RunStat) readQueueMetadata(queuePath string) error {
 	return nil
 }
 
-func runScript(script string, queuePath string, scriptsPath string) {
+func RunScript(script string, queuePath string, scriptsPath string) {
 
 	runStat := new(RunStat)
 	runStat.ScriptName = script
@@ -252,10 +252,10 @@ func runScript(script string, queuePath string, scriptsPath string) {
 	log.Print("user: ", runStat.UserName)
 	log.Print("hostname: ", runStat.HostName)
 
-	runStat.writeQueueMetadata(queueLogPath)
+	runStat.WriteQueueMetadata(queueLogPath)
 }
 
-func runQueue(serverurl string, queuePath string) {
+func RunQueue(serverurl string, queuePath string) {
 	log.Print("target server: ", serverurl)
 	log.Print("queue path: ", queuePath)
 
@@ -276,7 +276,7 @@ func runQueue(serverurl string, queuePath string) {
 		log.Print("dispatching ", queueId)
 		runStat := new(RunStat)
 
-		err := runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
+		err := runStat.ReadQueueMetadata(path.Join(queuePath, queueId) + ".meta")
 		if err != nil {
 			log.Print(err)
 			continue
