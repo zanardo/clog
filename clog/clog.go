@@ -20,6 +20,10 @@ import (
 	"time"
 )
 
+const (
+	Version = "0.3dev"
+)
+
 var queuePath string
 var scriptsPath string
 
@@ -34,12 +38,12 @@ type RunStat struct {
 }
 
 func usage() {
-	fmt.Printf(`%s usage:
+	fmt.Printf(`%s version %s usage:
 
 clog [-queue-path <path> -scripts-path <path>] run <script>
 clog [-queue-path <path>] send-queue <server url>
 
-`, os.Args[0])
+`, os.Args[0], Version)
 	os.Exit(1)
 }
 
