@@ -38,7 +38,7 @@ from hashlib import sha1
 from uuid import uuid4
 
 import threading, sqlite3, os, re, datetime, os.path, argparse, logging, \
-    random, bottle, time, subprocess, zlib, traceback
+    random, bottle, time, subprocess, zlib, traceback, base64
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -471,7 +471,7 @@ def newjob():
     assert re.match(r'^[a-zA-Z0-9\-_\.]+$', script)
 
     output = request.forms.output or ''
-    output = output.encode('utf-8')
+    output = base64.b64decode(output)
     outputz = buffer(zlib.compress(output))
 
     computername = request.forms.computername

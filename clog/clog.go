@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -241,7 +242,8 @@ func runQueue(serverurl string) {
 			bout := make([]byte, 1024*1024)
 			n, err := fp.Read(bout)
 			DieIfErr(err)
-			v.Set("output", string(bout[:n]))
+			str := base64.StdEncoding.EncodeToString(bout[:n])
+			v.Set("output", str)
 			r, err := http.PostForm(serverurl, v)
 			DieIfErr(err)
 			b := make([]byte, 4096)
