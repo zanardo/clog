@@ -62,6 +62,7 @@ def getdb():
                                    detect_types=sqlite3.PARSE_DECLTYPES)
         # Access results via dict() by column name
         local.db.row_factory = sqlite3.Row
+        local.db.text_factory = str
     return local.db
 
 def getcursor():
