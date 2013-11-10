@@ -32,7 +32,18 @@ type RunStat struct {
 	Status     string
 }
 
+func usage() {
+	fmt.Printf(`%s usage:
+
+clog [-queue-path <path> -scripts-path <path>] run <script>
+clog [-queue-path <path>] send-queue <server url>
+
+	`, os.Args[0])
+	os.Exit(1)
+}
+
 func main() {
+	flag.Usage = usage
 	flag.StringVar(&queuePath, "queue-path", DefaultQueuePath(), "queue path")
 	flag.StringVar(&scriptsPath, "scripts-path", DefaultScriptsPath(), "scripts path")
 	flag.Parse()
@@ -44,6 +55,8 @@ func main() {
 		case "send-queue":
 			runQueue(flag.Arg(1))
 		}
+	} else {
+		usage()
 	}
 }
 
