@@ -86,6 +86,8 @@ func main() {
 			runScript(flag.Arg(1))
 		case "send-queue":
 			runQueue(flag.Arg(1))
+		default:
+			usage()
 		}
 	} else {
 		usage()
