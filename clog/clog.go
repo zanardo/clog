@@ -11,10 +11,10 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 	"path"
-	"time"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 var queuePath string
@@ -181,7 +181,7 @@ func runScript(script string) {
 
 	endTime := time.Now().UnixNano()
 	runStat.EndTime = time.Now().Unix()
-	runStat.Duration = float64(endTime - startTime)/1000000000.0
+	runStat.Duration = float64(endTime-startTime) / 1000000000.0
 
 	log.Print("status: ", runStat.Status)
 	log.Print("duration: ", fmt.Sprintf("%0.3fs", runStat.Duration))
