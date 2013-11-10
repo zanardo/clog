@@ -49,6 +49,7 @@ import (
 
 const (
 	Version = "0.3dev"
+	MaxOutputSize = 1024 * 1024 // 1MB output tail
 )
 
 type RunStat struct {
@@ -303,16 +304,16 @@ func runQueue(serverurl string, queuePath string) {
 			continue
 		}
 
-		if fi.Size() > (1024 * 1024) {
+		if fi.Size() > MaxOutputSize {
 			log.Print(" output too large, truncating")
-			_, err := fp.Seek(fi.Size()-(1024*1024), 0)
+			_, err := fp.Seek(fi.Size()-MaxOutputSize, 0)
 			if err != nil {
 				log.Print(err)
 				continue
 			}
 		}
 
-		bout := make([]byte, 1024*1024)
+		bout := make([]byte, MaxOutputSize)
 		n, err := fp.Read(bout)
 		if err != nil {
 			log.Print(err)
