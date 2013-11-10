@@ -26,7 +26,7 @@ type RunStat struct {
 	StartTime  int64
 	EndTime    int64
 	Duration   float64
-	Status     bool
+	Status     string
 }
 
 func main() {
@@ -158,10 +158,10 @@ func runScript(script string) {
 	queuelog.Close()
 
 	// Checking command exit status.
-	runStat.Status = true
+	runStat.Status = "ok"
 	if err := cmd.Wait(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
-			runStat.Status = false
+			runStat.Status = "fail"
 		} else {
 			log.Fatal(err)
 		}
@@ -171,7 +171,7 @@ func runScript(script string) {
 	runStat.EndTime = time.Now().Unix()
 	runStat.Duration = float64(endTime - startTime)/1000000000.0
 
-	log.Print("sucess: ", runStat.Status)
+	log.Print("status: ", runStat.Status)
 	log.Print("duration: ", fmt.Sprintf("%0.3fs", runStat.Duration))
 	log.Print("user: ", runStat.UserName)
 	log.Print("hostname: ", runStat.HostName)
