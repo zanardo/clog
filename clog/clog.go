@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -192,8 +194,8 @@ func runScript(script string) {
 
 }
 
-func runQueue(url string) {
-	log.Print("target server: ", url)
+func runQueue(serverurl string) {
+	log.Print("target server: ", serverurl)
 	queuePath := QueuePath()
 	log.Print("queue path: ", queuePath)
 	files, err := ioutil.ReadDir(queuePath)
@@ -205,6 +207,29 @@ func runQueue(url string) {
 			log.Print("dispatching ", queueId)
 			runStat := new(RunStat)
 			runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
+			v := url.Values{}
+			v.Set("start_time", fmt.Sprintf("%d", runStat.StartTime))
+			v.Set("end_time", fmt.Sprintf("%d", runStat.EndTime))
+			v.Set("duration", fmt.Sprintf("%0.3f", runStat.Duration))
+			v.Set("status", runStat.Status)
+			v.Set("script", runStat.ScriptName)
+			v.Set("computername", runStat.HostName)
+			v.Set("username", runStat.UserName)
+			v.Set("id", queueId)
+			r, err := http.PostForm(serverurl, v)
+			DieIfErr(err)
+			b := make([]byte, 4096)
+			n, err := r.Body.Read(b)
+			DieIfErr(err)
+			if r.StatusCode == 200 && string(b[:n]) == "ok" {
+				err = os.Remove(path.Join(queuePath, queueId) + ".out")
+				DieIfErr(err)
+				err = os.Remove(path.Join(queuePath, queueId) + ".meta")
+				DieIfErr(err)
+			} else {
+				log.Println("error -- server response:")
+				log.Print(string(b[:n]))
+			}
 		}
 	}
 }
