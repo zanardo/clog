@@ -38,7 +38,7 @@ func usage() {
 clog [-queue-path <path> -scripts-path <path>] run <script>
 clog [-queue-path <path>] send-queue <server url>
 
-	`, os.Args[0])
+`, os.Args[0])
 	os.Exit(1)
 }
 
