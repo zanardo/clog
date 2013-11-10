@@ -43,7 +43,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"time"
 )
 
@@ -257,51 +257,56 @@ func runQueue(serverurl string, queuePath string) {
 	log.Print("target server: ", serverurl)
 	log.Print("queue path: ", queuePath)
 	files, err := ioutil.ReadDir(queuePath)
-	DieIfErr(err)
+	if err != nil {
+		panic(err)
+	}
 	for _, file := range files {
 		name := file.Name()
-		if len(name) == 41 && strings.HasSuffix(name, ".meta") {
-			queueId := name[:36]
-			log.Print("dispatching ", queueId)
-			runStat := new(RunStat)
-			runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
-			v := url.Values{}
-			v.Set("start_time", fmt.Sprintf("%d", runStat.StartTime))
-			v.Set("end_time", fmt.Sprintf("%d", runStat.EndTime))
-			v.Set("duration", fmt.Sprintf("%0.3f", runStat.Duration))
-			v.Set("status", runStat.Status)
-			v.Set("script", runStat.ScriptName)
-			v.Set("computername", runStat.HostName)
-			v.Set("username", runStat.UserName)
-			v.Set("id", queueId)
-			fp, err := os.Open(path.Join(queuePath, queueId) + ".out")
+		rxname := regexp.MustCompile(
+			`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.meta$`)
+		if ! rxname.MatchString(name) {
+			continue
+		}
+		queueId := name[:36]
+		log.Print("dispatching ", queueId)
+		runStat := new(RunStat)
+		runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
+		v := url.Values{}
+		v.Set("start_time", fmt.Sprintf("%d", runStat.StartTime))
+		v.Set("end_time", fmt.Sprintf("%d", runStat.EndTime))
+		v.Set("duration", fmt.Sprintf("%0.3f", runStat.Duration))
+		v.Set("status", runStat.Status)
+		v.Set("script", runStat.ScriptName)
+		v.Set("computername", runStat.HostName)
+		v.Set("username", runStat.UserName)
+		v.Set("id", queueId)
+		fp, err := os.Open(path.Join(queuePath, queueId) + ".out")
+		DieIfErr(err)
+		fi, err := fp.Stat()
+		DieIfErr(err)
+		if fi.Size() > (1024 * 1024) {
+			log.Print(" output too large, truncating")
+			_, err := fp.Seek(fi.Size()-(1024*1024), 0)
 			DieIfErr(err)
-			fi, err := fp.Stat()
+		}
+		bout := make([]byte, 1024*1024)
+		n, err := fp.Read(bout)
+		DieIfErr(err)
+		str := base64.StdEncoding.EncodeToString(bout[:n])
+		v.Set("output", str)
+		r, err := http.PostForm(serverurl, v)
+		DieIfErr(err)
+		b := make([]byte, 4096)
+		n, err = r.Body.Read(b)
+		DieIfErr(err)
+		if r.StatusCode == 200 && string(b[:n]) == "ok" {
+			err = os.Remove(path.Join(queuePath, queueId) + ".out")
 			DieIfErr(err)
-			if fi.Size() > (1024 * 1024) {
-				log.Print(" output too large, truncating")
-				_, err := fp.Seek(fi.Size()-(1024*1024), 0)
-				DieIfErr(err)
-			}
-			bout := make([]byte, 1024*1024)
-			n, err := fp.Read(bout)
+			err = os.Remove(path.Join(queuePath, queueId) + ".meta")
 			DieIfErr(err)
-			str := base64.StdEncoding.EncodeToString(bout[:n])
-			v.Set("output", str)
-			r, err := http.PostForm(serverurl, v)
-			DieIfErr(err)
-			b := make([]byte, 4096)
-			n, err = r.Body.Read(b)
-			DieIfErr(err)
-			if r.StatusCode == 200 && string(b[:n]) == "ok" {
-				err = os.Remove(path.Join(queuePath, queueId) + ".out")
-				DieIfErr(err)
-				err = os.Remove(path.Join(queuePath, queueId) + ".meta")
-				DieIfErr(err)
-			} else {
-				log.Println("error -- server response:")
-				log.Print(string(b[:n]))
-			}
+		} else {
+			log.Println("error -- server response:")
+			log.Print(string(b[:n]))
 		}
 	}
 }
