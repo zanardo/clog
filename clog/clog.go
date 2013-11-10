@@ -166,6 +166,7 @@ func (runStat *RunStat) writeQueueMetadata(queuePath string) {
 func (runStat *RunStat) readQueueMetadata(queuePath string) {
 	fp, err := os.Open(queuePath)
 	DieIfErr(err)
+	defer fp.Close()
 	b := make([]byte, 64000)
 	n, err := fp.Read(b)
 	DieIfErr(err)
