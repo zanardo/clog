@@ -95,21 +95,27 @@ func main() {
 }
 
 func UserHome() (path string) {
-	me, err := user.Current()
-	DieIfErr(err)
-	return me.HomeDir
+	if me, err := user.Current(); err != nil {
+		panic(err)
+	} else {
+		return me.HomeDir
+	}
 }
 
 func UserName() (username string) {
-	me, err := user.Current()
-	DieIfErr(err)
-	return me.Username
+	if me, err := user.Current(); err != nil {
+		panic(err)
+	} else {
+		return me.Username
+	}
 }
 
 func HostName() (hostname string) {
-	hostname, err := os.Hostname()
-	DieIfErr(err)
-	return hostname
+	if hostname, err := os.Hostname(); err != nil {
+		panic(err)
+	} else {
+		return hostname
+	}
 }
 
 func DefaultScriptsPath() (path string) {
