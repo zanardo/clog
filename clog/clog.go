@@ -154,13 +154,19 @@ func DieIfErr(err error) {
 // Saves queue metadata for delivery.
 func (runStat *RunStat) writeQueueMetadata(queuePath string) {
 	fp, err := os.OpenFile(queuePath+".meta.tmp", os.O_CREATE|os.O_WRONLY, 0600)
-	DieIfErr(err)
+	if err != nil {
+		panic(err)
+	}
 	json, err := json.Marshal(runStat)
-	DieIfErr(err)
+	if err != nil {
+		panic(err)
+	}
 	fp.Write(json)
 	fp.Close()
 	err = os.Rename(queuePath+".meta.tmp", queuePath+".meta")
-	DieIfErr(err)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Read queue metadata.
