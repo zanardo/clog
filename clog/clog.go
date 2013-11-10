@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"path"
 	"time"
 	"strings"
 )
@@ -114,6 +115,17 @@ func (runStat *RunStat) writeQueueMetadata(queuePath string) {
 	DieIfErr(err)
 }
 
+// Read queue metadata.
+func (runStat *RunStat) readQueueMetadata(queuePath string) {
+	fp, err := os.Open(queuePath)
+	DieIfErr(err)
+	b := make([]byte, 64000)
+	n, err := fp.Read(b)
+	DieIfErr(err)
+	err = json.Unmarshal(b[:n], &runStat)
+	DieIfErr(err)
+}
+
 func runScript(script string) {
 
 	runStat := new(RunStat)
@@ -191,6 +203,8 @@ func runQueue(url string) {
 		if len(name) == 41 && strings.HasSuffix(name, ".meta") {
 			queueId := name[:36]
 			log.Print("dispatching ", queueId)
+			runStat := new(RunStat)
+			runStat.readQueueMetadata(path.Join(queuePath, queueId) + ".meta")
 		}
 	}
 }
