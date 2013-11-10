@@ -48,7 +48,7 @@ import (
 )
 
 const (
-	Version = "0.3dev"
+	Version       = "0.3dev"
 	MaxOutputSize = 1024 * 1024 // 1MB output tail
 )
 
@@ -218,7 +218,7 @@ func runScript(script string, queuePath string, scriptsPath string) {
 		panic(err)
 	}
 
-	queuelog, err := os.OpenFile(queueLogPath+".out", 
+	queuelog, err := os.OpenFile(queueLogPath+".out",
 		os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		panic(err)
@@ -268,7 +268,7 @@ func runQueue(serverurl string, queuePath string) {
 		name := file.Name()
 		rxname := regexp.MustCompile(
 			`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.meta$`)
-		if ! rxname.MatchString(name) {
+		if !rxname.MatchString(name) {
 			continue
 		}
 		queueId := name[:36]
