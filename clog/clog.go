@@ -315,7 +315,7 @@ func RunQueue(serverurl string, queuePath string) {
 
 		bout := make([]byte, MaxOutputSize)
 		n, err := fp.Read(bout)
-		if err != nil {
+		if n > 0 && err != nil {
 			log.Print(err)
 			return
 		}
