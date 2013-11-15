@@ -363,8 +363,8 @@ def savedaystokeep(computername, computeruser, script):
     if not re.match(r'^\d+$', daystokeep):
         return 'invalid argument'
     daystokeep = int(daystokeep)
-    if daystokeep < 1:
-        return 'days to keep must be >= 1'
+    if daystokeep < 0:
+        return 'days to keep must be >= 0'
     with db_trans() as c:
         c.execute('replace into jobconfig (computername, computeruser, '
             'script, daystokeep) values (:computername, :computeruser, '
