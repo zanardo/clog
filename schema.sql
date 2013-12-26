@@ -20,6 +20,8 @@ CREATE TABLE jobhistory (
 	status text not null,
 	output blob
 );
+CREATE INDEX idx_jobhistory_job_id ON jobhistory(job_id);
+CREATE INDEX idx_jobhistory_datestarted ON jobhistory(datestarted);
 
 CREATE TABLE jobconfig (
 	job_id integer not null references jobs(id) primary key,
