@@ -1,14 +1,29 @@
+CREATE TABLE jobs (
+	id integer not null primary key,
+	computername text not null,
+	computeruser text not null,
+	script text not null,
+	date_last_success timestamp not null,
+	date_last_failure timestamp not null,
+	last_status text not null,
+	last_duration float not null,
+);
+CREATE UNIQUE INDEX idx_jobs_job ON jobs(computername, computeruser, script);
+
 CREATE TABLE jobhistory (
 	id text not null primary key,
-	script text not null,
-	computername text not null,
+	job_id integer not null references jobs(id),
 	ip text not null,
-	computeruser text not null,
 	datestarted timestamp not null,
 	datefinished timestamp not null,
 	duration float not null,
 	status text not null,
 	output blob
+);
+
+CREATE TABLE jobconfig (
+	job_id integer not null references jobs(id) primary key,
+	daystokeep int not null
 );
 
 CREATE TABLE users (
@@ -23,20 +38,10 @@ CREATE TABLE sessions (
 	username text NOT NULL
 );
 
-CREATE TABLE jobconfig (
-	computername text not null,
-	computeruser text not null,
-	script not null,
-	daystokeep int not null,
-	PRIMARY KEY(computername, computeruser, script)
-);
-
 CREATE TABLE jobconfigalert (
-	computername text not null,
-	computeruser text not null,
-	script text not null,
+	job_id integer not null references jobs(id),
 	email text not null,
-	PRIMARY KEY(computername, computeruser, script, email)
+	PRIMARY KEY(job_id, email)
 );
 
 INSERT INTO users ( username, password, is_admin )
