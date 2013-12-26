@@ -590,6 +590,7 @@ def send_alert(email, computername, computeruser, script, status, output):
 def maint_thread():
     log.info('maint_thread: starting maintenance thread')
     while True:
+        time.sleep(1800)
         log.info('maint_thread: starting maintenance')
         try:
             purge_jobhistory()
@@ -598,7 +599,6 @@ def maint_thread():
             log.info("maint_thread: error: %s", ex)
             print traceback.format_exc()
         log.info('maint_thread: finishing maintenance')
-        time.sleep(1800)
 
 
 if __name__ == '__main__':
