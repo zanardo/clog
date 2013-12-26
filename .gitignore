@@ -1,4 +1,7 @@
 .venv/
 **.db
 **.db.logs
+**.swp
+**.db-shm
+**.db-wal
 clog/clog
