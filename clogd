@@ -44,6 +44,9 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
 log = logging.getLogger(__name__)
 
+# schema version
+SCHEMA = 1
+
 config = {}
 config['dbname'] = 'clogd.db'
 
@@ -66,6 +69,11 @@ def getdb():
         c = local.db.cursor()
         c.execute("PRAGMA busy_timeout=1000;")
         c.execute("PRAGMA foreign_keys=true;")
+        # Get database schema version
+        c.execute("PRAGMA user_version")
+        version = c.fetchone()[0]
+        if version < SCHEMA:
+            migrate_db(version)
     return local.db
 
 def getcursor():
@@ -85,6 +93,119 @@ def db_trans():
         raise
     finally:
         dbh.commit()
+
+# Migrate schema versions from database. Versions are stored in PRAGMA
+# user_version on SQLite database, and checked on getdb().
+def migrate_db(version):
+    with db_trans() as c:
+        log.info("starting schema migration from %d to %d", version, SCHEMA)
+        if version == 0:
+            log.info("applying schema 1 modifications")
+            c.executescript("""
+                CREATE TABLE jobs (
+                    id integer not null primary key,
+                    computername text not null,
+                    computeruser text not null,
+                    script text not null,
+                    date_last_success timestamp,
+                    date_last_failure timestamp,
+                    last_status text,
+                    last_duration float
+                );
+                CREATE UNIQUE INDEX idx_jobs_job ON jobs(computername, computeruser, script);
+            """)
+            c.execute("insert into jobs (computername, computeruser, script)"
+                "select computername, computeruser, script from jobhistory "
+                "group by computername, computeruser, script")
+            # filling date_last_success
+            c.execute("select computername, computeruser, script, max(datestarted) as date "
+                "from jobhistory where status='ok' group by computername, computeruser, script")
+            c2 = getcursor()
+            for r in c:
+                date = r['date']
+                computername = r['computername']
+                computeruser = r['computeruser']
+                script = r['script']
+                c2.execute("update jobs set date_last_success=:date where "
+                    "computername=:computername and computeruser=:computeruser "
+                    "and script=:script", locals())
+            # filling date_last_failure
+            c.execute("select computername, computeruser, script, max(datestarted) as date "
+                "from jobhistory where status='fail' group by computername, computeruser, script")
+            c2 = getcursor()
+            for r in c:
+                date = r['date']
+                computername = r['computername']
+                computeruser = r['computeruser']
+                script = r['script']
+                c2.execute("update jobs set date_last_failure=:date where "
+                    "computername=:computername and computeruser=:computeruser "
+                    "and script=:script", locals())
+            # filling last_status and last_duration
+            c.execute("select computername, computeruser, script, status, duration "
+                "from jobhistory group by computername, computeruser, script having "
+                "max(datestarted)")
+            c2 = getcursor()
+            for r in c:
+                computername = r['computername']
+                computeruser = r['computeruser']
+                script = r['script']
+                status = r['status']
+                duration = r['duration']
+                c2.execute("update jobs set last_status=:status, last_duration=:duration "
+                    "where computername=:computername and computeruser=:computeruser "
+                    "and script=:script", locals())
+            # changing jobhistory
+            c.executescript("""
+                CREATE TABLE jobhistory2 (
+                    id text not null primary key,
+                    job_id integer not null references jobs(id),
+                    ip text not null,
+                    datestarted timestamp not null,
+                    datefinished timestamp not null,
+                    duration float not null,
+                    status text not null,
+                    output blob
+                );
+            """)
+            c.execute("insert into jobhistory2 (id, job_id, ip, datestarted, "
+                "datefinished, duration, status, output) select j1.id, j2.id, "
+                "ip, datestarted, datefinished, duration, status, output "
+                "from jobhistory as j1 inner join jobs as j2 on "
+                "j2.computername=j1.computername and j2.computeruser=j1.computeruser "
+                "and j2.script=j1.script")
+            c.execute("drop table jobhistory")
+            c.execute("alter table jobhistory2 rename to jobhistory")
+            # changing jobconfig
+            c.executescript("""
+                CREATE TABLE jobconfig2 (
+                    job_id integer not null references jobs(id) primary key,
+                    daystokeep int not null
+                );
+            """)
+            c.execute("insert into jobconfig2 (job_id, daystokeep) select "
+                "j2.id, j1.daystokeep from jobconfig as j1 inner join jobs "
+                "as j2 on j2.computername=j1.computername and "
+                "j2.computeruser=j1.computeruser and j2.script=j1.script")
+            c.execute("drop table jobconfig")
+            c.execute("alter table jobconfig2 rename to jobconfig")
+            # changing jobconfigalert
+            c.executescript("""
+                CREATE TABLE jobconfigalert2 (
+                    job_id integer not null references jobs(id),
+                    email text not null,
+                    PRIMARY KEY(job_id, email)
+                );
+            """)
+            c.execute("insert into jobconfigalert2 (job_id, email) select "
+                "j2.id, j1.email from jobconfigalert as j1 inner join jobs "
+                "as j2 on j2.computername=j1.computername and "
+                "j2.computeruser=j1.computeruser and j2.script=j1.script")
+            c.execute("drop table jobconfigalert")
+            c.execute("alter table jobconfigalert2 rename to jobconfigalert")
+            # increasing schema version
+            c.execute("PRAGMA user_version=1;")
+    log.info("schema migration successful")
 
 def requires_auth(f):
     @wraps(f)
@@ -613,6 +734,9 @@ if __name__ == '__main__':
         default=False, action='store_true')
 
     args = parser.parse_args()
+
+    # Force start database connection so schema migration can be started.
+    getcursor()
 
     # Starting maintenance thread
     t = threading.Thread(target=maint_thread)
