@@ -71,7 +71,7 @@ def getdb():
         c.execute("PRAGMA foreign_keys=true;")
         # Get database schema version
         c.execute("PRAGMA user_version")
-        version = c.fetchone()[0]
+        version = int(c.fetchone()[0])
         if version < SCHEMA:
             migrate_db(version)
     return local.db
@@ -581,13 +581,26 @@ def newjob():
         script, ip)
     log.info('  id: %s', rid)
 
+    job_id = get_job_id(computername, computeruser, script)
+    if not job_id:
+        with db_trans() as c:
+            c.execute("insert into jobs (computername, computeruser, "
+                "script, last_status, last_duration) values "
+                "(:computername, :computeruser, :script, :status, :duration)",
+                locals())
+            job_id = c.lastrowid
     try:
         with db_trans() as c:
-            c.execute("insert into jobhistory (id, script, computername, "
-                "ip, computeruser, datestarted, datefinished, "
-                "status, duration, output) values (:rid, :script, :computername, "
-                ":ip, :computeruser, :start_time, :end_time, :status, :duration, "
-                ":outputz)", locals())
+            c.execute("insert into jobhistory (id, job_id, ip, "
+                "datestarted, datefinished, status, duration, output) "
+                "values (:rid, :job_id, :ip, :start_time, :end_time, :status, "
+                ":duration, :outputz)", locals())
+            if status == 'ok':
+                c.execute("update jobs set date_last_success=:start_time "
+                    "where id=:job_id", locals())
+            else:
+                c.execute("update jobs set date_last_failure=:start_time "
+                    "where id=:job_id", locals())
     except sqlite3.IntegrityError:
         # Ignoring duplicate insertion.
         return 'ok'
@@ -601,9 +614,7 @@ def newjob():
                         status, output)
             elif status == 'ok':
                 c = getcursor()
-                c.execute("select status from jobhistory "
-                    "where computername=:computername and "
-                    "computeruser=:computeruser and script=:script "
+                c.execute("select status from jobhistory where job_id=:job_id "
                     "order by datestarted desc limit 1 offset 1", locals())
                 r = c.fetchone()
                 if r and r['status'] == 'fail':
@@ -615,11 +626,10 @@ def newjob():
 
 # Get notification e-mails for a job.
 def getalertemails(computername, computeruser, script):
+    job_id = get_job_id(computername, computeruser, script)
     c = getcursor()
-    c.execute("select email from jobconfigalert where "
-        "computername=:computername and "
-        "computeruser=:computeruser and "
-        "script=:script", locals())
+    c.execute("select email from jobconfigalert where job_id=:job_id",
+        locals())
     emails = []
     for row in c:
         emails.append(row['email'])
