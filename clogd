@@ -417,13 +417,13 @@ def jobhistory(computername, computeruser, script):
     ctx['computeruser'] = computeruser
     ctx['script'] = script
     c = getcursor()
-    c.execute("select id, computername, computeruser, script, "
-        "datestarted, datefinished, status, duration "
-        "from jobhistory "
-        "where computername=:computername "
-        "  and computeruser=:computeruser "
-        "  and script=:script "
-        "order by computername, computeruser, script, datestarted desc", (locals()))
+    c.execute("select h.id, j.computername, j.computeruser, j.script, "
+        "h.datestarted, h.datefinished, h.status, h.duration "
+        "from jobhistory as h inner join jobs as j on j.id=h.job_id "
+        "where j.computername=:computername "
+        "  and j.computeruser=:computeruser "
+        "  and j.script=:script "
+        "order by j.computername, j.computeruser, j.script, h.datestarted desc", (locals()))
     history = []
     for hist in c:
         h = dict(hist)
