@@ -396,10 +396,9 @@ def joboutput(computername, computeruser, script, id):
         raise ValueError('invalid id')
     output = ''
     c = getcursor()
-    c.execute("select output from jobhistory where "
-        "computername=:computername and "
-        "computeruser=:computeruser and "
-        "script=:script and id=:id", locals())
+    c.execute("select h.output from jobhistory as h inner join jobs as j "
+        "on h.job_id=j.id where j.computername=:computername and "
+        "j.computeruser=:computeruser and j.script=:script and h.id=:id", locals())
     r = c.fetchone()
     if not r:
         response.status = 404
