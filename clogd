@@ -67,8 +67,10 @@ def getdb():
         local.db.row_factory = sqlite3.Row
         local.db.text_factory = str
         c = local.db.cursor()
-        c.execute("PRAGMA busy_timeout=1000;")
-        c.execute("PRAGMA foreign_keys=true;")
+        c.execute("PRAGMA foreign_keys = ON;")
+        c.execute("PRAGMA synchronous = NORMAL;")
+        c.execute("PRAGMA journal_mode = WAL;")
+        c.execute("PRAGMA busy_timeout = 200;")
         # Get database schema version
         c.execute("PRAGMA user_version")
         version = int(c.fetchone()[0])
