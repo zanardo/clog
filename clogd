@@ -63,6 +63,8 @@ def getdb():
         # Access results via dict() by column name
         local.db.row_factory = sqlite3.Row
         local.db.text_factory = str
+        c = local.db.cursor()
+        c.execute("PRAGMA busy_timeout=1000;")
     return local.db
 
 def getcursor():
