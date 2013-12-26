@@ -46,3 +46,5 @@ CREATE TABLE jobconfigalert (
 
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
+
+PRAGMA user_version=1;
