@@ -3,10 +3,10 @@ CREATE TABLE jobs (
 	computername text not null,
 	computeruser text not null,
 	script text not null,
-	date_last_success timestamp not null,
-	date_last_failure timestamp not null,
-	last_status text not null,
-	last_duration float not null
+	date_last_success timestamp,
+	date_last_failure timestamp,
+	last_status text,
+	last_duration float
 );
 CREATE UNIQUE INDEX idx_jobs_job ON jobs(computername, computeruser, script);
 
