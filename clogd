@@ -486,6 +486,18 @@ def configjob(computername, computeruser, script):
         emails.append(r['email'])
     return dict(ctx=ctx, daystokeep=daystokeep, emails="\n".join(emails))
 
+@post('/purge-job/<computername>/<computeruser>/<script>/')
+@requires_auth
+@requires_admin
+def purgejob(computername, computeruser, script):
+    job_id = get_job_id(computername, computeruser, script)
+    with db_trans() as c:
+        c.execute("delete from jobhistory where job_id=:job_id", locals())
+        c.execute("delete from jobconfig where job_id=:job_id", locals())
+        c.execute("delete from jobconfigalert where job_id=:job_id", locals())
+        c.execute("delete from jobs where id=:job_id", locals())
+    return redirect('/')
+
 @post('/save-daystokeep/<computername>/<computeruser>/<script>/')
 @requires_auth
 @requires_admin

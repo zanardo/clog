@@ -26,6 +26,11 @@
 	<input type="submit" name="submitemails" value="save">
 </form>
 
+<p>
+
+<form method="post" action="/purge-job/{{ctx['computername']}}/{{ctx['computeruser']}}/{{ctx['script']}}/" enctype="multipart/form-data">
+	<input type="submit" value="purge job data">
+</form>
 
 %include version ctx
 
