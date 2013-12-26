@@ -266,6 +266,16 @@ def makesession(user):
             "values (:session_id, :user)", locals())
     return session_id
 
+def get_job_id(computername, computeruser, script):
+    c = getcursor()
+    c.execute("select id from jobs where computername=:computername "
+        "and computeruser=:computeruser and script=:script", locals())
+    r = c.fetchone()
+    if not r:
+        return None
+    else:
+        return r[0]
+
 @get('/admin')
 @view('admin')
 @requires_auth
@@ -462,17 +472,15 @@ def configjob(computername, computeruser, script):
     ctx['script'] = script
     daystokeep = 30
     c = getcursor()
-    c.execute('select daystokeep from jobconfig where '
-        'computername=:computername and '
-        'computeruser=:computeruser and '
-        'script=:script', locals())
+    c.execute("select c.daystokeep from jobconfig as c inner join "
+        "jobs as j on j.id=c.job_id where j.computername=:computername and "
+        "j.computeruser=:computeruser and j.script=:script", locals())
     r = c.fetchone()
     if r:
         daystokeep = r['daystokeep']
-    c.execute('select email from jobconfigalert where '
-        'computername=:computername and '
-        'computeruser=:computeruser and '
-        'script=:script', locals())
+    c.execute("select a.email from jobconfigalert as a inner join "
+        "jobs as j on j.id=a.job_id where j.computername=:computername and "
+        "j.computeruser=:computeruser and j.script=:script", locals())
     emails = []
     for r in c:
         emails.append(r['email'])
@@ -489,10 +497,10 @@ def savedaystokeep(computername, computeruser, script):
     daystokeep = int(daystokeep)
     if daystokeep < 0:
         return 'days to keep must be >= 0'
+    job_id = get_job_id(computername, computeruser, script)
     with db_trans() as c:
-        c.execute('replace into jobconfig (computername, computeruser, '
-            'script, daystokeep) values (:computername, :computeruser, '
-            ':script, :daystokeep)', locals())
+        c.execute("replace into jobconfig (job_id, daystokeep) "
+            "values (:job_id, :daystokeep)", locals())
     return redirect('/config-job/' + computername + '/' + 
         computeruser + '/' + script + '/')
 
@@ -501,15 +509,11 @@ def savedaystokeep(computername, computeruser, script):
 @requires_admin
 def savealertemails(computername, computeruser, script):
     assert 'emails' in request.forms
+    job_id = get_job_id(computername, computeruser, script)
     with db_trans() as c:
-        c.execute('delete from jobconfigalert where '
-                'computername=:computername and '
-                'computeruser=:computeruser and '
-                'script=:script', locals())
+        c.execute("delete from jobconfigalert where job_id=:job_id", locals())
         for email in request.forms.emails.split():
-            c.execute('insert into jobconfigalert values ('
-                ':computername, :computeruser, :script, '
-                ':email)', locals())     
+            c.execute("insert into jobconfigalert values (:job_id, :email)", locals())     
     return redirect('/config-job/' + computername + '/' + 
         computeruser + '/' + script + '/')
 
