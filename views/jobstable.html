@@ -11,16 +11,16 @@
 		<td>{{ job['computername'] }}</td>
 		<td>{{ job['computeruser'] }}</td>
 		<td><a href="/jobs/{{job['computername']}}/{{job['computeruser']}}/{{job['script'] }}/">{{ job['script'] }}</a></td>
-		<td>{{ job['lastsuccess'] }}</td>
-		<td>{{ job['lastfail'] }}</td>
-		%if job['laststatus'] == 'ok':
+		<td>{{ job['date_last_success'] }}</td>
+		<td>{{ job['date_last_failure'] }}</td>
+		%if job['last_status'] == 'ok':
 		<td class="tdcenter">
 		%else:
 		<td class="tdfail tdcenter">
 		%end
-			{{ job['laststatus'] }}
+			{{ job['last_status'] }}
 		</td>
-		<td class="tdright">{{ job['lastduration'] }}s</td>
+		<td class="tdright">{{ job['last_duration'] }}s</td>
 	</tr>
 	%end
 </table>
