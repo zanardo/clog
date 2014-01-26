@@ -9,7 +9,7 @@ fail.
 
 clog server is developed in Python and is tested only in Linux.
 
-    git clone git://github.com/zanardo/clog
+    git clone https://github.com/zanardo/clog.git
     cd clog
     make
 
