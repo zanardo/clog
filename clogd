@@ -466,7 +466,7 @@ def jobhistory(computername, computeruser, script):
     history = []
     for hist in c:
         h = dict(hist)
-        h['duration'] = "%.3f" % h['duration']
+        h['duration'] = duration_to_human(h['duration'])
         history.append(h)
     return dict(history=history, ctx=ctx)
 
