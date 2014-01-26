@@ -53,6 +53,15 @@ config['dbname'] = 'clogd.db'
 # Bottle has a low limit for post data. Let's make it larger.
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 
+def seconds_to_human(sec):
+    if sec < 1:
+        return '%dms' % (sec*1000.0)
+    if sec < 60:
+        return '%ds' % sec
+    if sec < 60*60:
+        return '%dm %ds' % (sec/60.0, sec%60)
+    return '%dh %dm' % (sec/(60.0*60.0), (sec/(60.0*60.0))%60)
+
 def getctx():
     user = currentuser()
     user_is_admin = userisadmin(user)
@@ -460,7 +469,7 @@ def allhistory():
     history = []
     for hist in c:
         h = dict(hist)
-        h['duration'] = "%.3f" % h['duration']
+        h['duration'] = seconds_to_human(h['duration'])
         history.append(h)
     return dict(history=history, offset=offset)
 
@@ -552,7 +561,7 @@ def jobs():
         j = dict(job)
         if j['date_last_success'] is None: j['date_last_success'] = ''
         if j['date_last_failure'] is None: j['date_last_failure'] = ''
-        j['last_duration'] = "%.3f" % j['last_duration']
+        j['last_duration'] = seconds_to_human(j['last_duration'])
         jobs.append(j)
     return dict(jobs=jobs)
 
