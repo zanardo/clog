@@ -93,7 +93,7 @@ def db_trans():
     except:
         dbh.rollback()
         raise
-    finally:
+    else:
         dbh.commit()
 
 # Migrate schema versions from database. Versions are stored in PRAGMA
