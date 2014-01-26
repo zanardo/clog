@@ -716,7 +716,7 @@ def send_alert(email, computername, computeruser, script, status, output):
     elif status == 'ok':
         subject = 'clog: job {} back to normal for {}@{}'.format(script,
             computeruser, computername)
-    body += '\n\nThis is an automatic notification send by ' + \
+    body += '\n\nThis is an automatic notification sent by ' + \
             'clog (https://github.com/zanardo/clog)'
     s = subprocess.Popen(['mail', '-s', subject, email], stdin=subprocess.PIPE)
     s.communicate(body)
