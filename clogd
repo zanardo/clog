@@ -112,7 +112,8 @@ def getcursor():
 @contextmanager
 def db_trans():
     # Open a new database transaction and commit on context
-    # exit, or rollback in case anything fails.
+    # exit, or rollback in case anything fails. Dispose the
+    # cursor on finish.
     dbh = getdb()
     c = dbh.cursor()
     try:
@@ -122,6 +123,8 @@ def db_trans():
         raise
     else:
         dbh.commit()
+    finally:
+        c.close()
 
 # Migrate schema versions from database. Versions are stored in PRAGMA
 # user_version on SQLite database, and checked on getdb().
