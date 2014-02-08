@@ -58,9 +58,9 @@ def duration_to_human(sec):
         return '%d ms' % (sec*1000.0)
     if sec < 60:
         return '%d sec' % sec
-    if sec < 60*60:
+    if sec < 3600:  # 1 hour
         return '%d min %d sec' % (sec/60.0, sec%60)
-    return '%d hr %d min' % (sec/(60.0*60.0), (sec/(60.0*60.0))%60)
+    return '%d hr %d min' % (sec/3600, (sec/3600%60))
 
 def timediff_to_human(seconds):
     if seconds is None:
@@ -70,14 +70,14 @@ def timediff_to_human(seconds):
         return '%d ms' % (diff*1000.0)
     if diff < 60:
         return '%d sec' % diff
-    if diff < 60*60:
-        return '%d min' % (diff/60.0)
-    if diff < 60*60*24:
-        return '%d hr' % (diff/60.0/60.0)
-    if diff < 60*60*24*31:
-        return '%d days' % (diff/60.0/60.0/24.0)
-    if diff < 60*60*24*31*12:
-        return '%d mo' % (diff/60.0/60.0/24.0/12.0)
+    if diff < 3600: # 1 hour
+        return '%d min' % (diff/60)
+    if diff < 86400:    # 1 day
+        return '%d hr' % (diff/3600)
+    if diff < 2419200:  # 1 month
+        return '%d days' % (diff/86400)
+    if diff < 29030400: # 1 year
+        return '%d mo' % (diff/2419200)
     return 'ages'
 
 def getctx():
