@@ -645,11 +645,11 @@ def newjob():
                 "values (:rid, :job_id, :ip, :start_time, :end_time, :status, "
                 ":duration, :outputz)", locals())
             if status == 'ok':
-                c.execute("update jobs set date_last_success=:start_time "
-                    "where id=:job_id", locals())
+                c.execute("update jobs set date_last_success=:start_time, "
+                    "last_status='ok' where id=:job_id", locals())
             else:
-                c.execute("update jobs set date_last_failure=:start_time "
-                    "where id=:job_id", locals())
+                c.execute("update jobs set date_last_failure=:start_time, "
+                    "last_status='fail' where id=:job_id", locals())
     except sqlite3.IntegrityError:
         # Ignoring duplicate insertion.
         return 'ok'
