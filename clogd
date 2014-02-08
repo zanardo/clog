@@ -62,10 +62,10 @@ def duration_to_human(sec):
         return '%d min %d sec' % (sec/60.0, sec%60)
     return '%d hr %d min' % (sec/(60.0*60.0), (sec/(60.0*60.0))%60)
 
-def timediff_to_human(t):
-    if t is None:
+def timediff_to_human(seconds):
+    if seconds is None:
         return ''
-    diff = (datetime.datetime.now()-t).total_seconds()
+    diff = (datetime.datetime.now()-seconds).total_seconds()
     if diff < 1:
         return '%d ms' % (diff*1000.0)
     if diff < 60:
