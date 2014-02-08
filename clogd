@@ -53,14 +53,14 @@ CONFIG['dbname'] = 'clogd.db'
 # Bottle has a low limit for post data. Let's make it larger.
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 
-def duration_to_human(sec):
-    if sec < 1:
-        return '%d ms' % (sec*1000.0)
-    if sec < 60:
-        return '%d sec' % sec
-    if sec < 3600:  # 1 hour
-        return '%d min %d sec' % (sec/60.0, sec%60)
-    return '%d hr %d min' % (sec/3600, (sec/3600%60))
+def duration_to_human(seconds):
+    if seconds < 1:
+        return '%d ms' % (seconds*1000.0)
+    if seconds < 60:
+        return '%d sec' % seconds
+    if seconds < 3600:  # 1 hour
+        return '%d min %d sec' % (seconds/60.0, seconds%60)
+    return '%d hr %d min' % (seconds/3600, (seconds/3600%60))
 
 def timediff_to_human(seconds):
     if seconds is None:
