@@ -143,14 +143,16 @@ def migrate_db(version):
                     last_status text,
                     last_duration float
                 );
-                CREATE UNIQUE INDEX idx_jobs_job ON jobs(computername, computeruser, script);
+                CREATE UNIQUE INDEX idx_jobs_job ON jobs(computername,
+                    computeruser, script);
             """)
             c.execute("insert into jobs (computername, computeruser, script)"
                 "select computername, computeruser, script from jobhistory "
                 "group by computername, computeruser, script")
             # filling date_last_success
-            c.execute("select computername, computeruser, script, max(datestarted) as date "
-                "from jobhistory where status='ok' group by computername, computeruser, script")
+            c.execute("select computername, computeruser, script, "
+                "max(datestarted) as date from jobhistory where "
+                "status='ok' group by computername, computeruser, script")
             c2 = getcursor()
             for r in c:
                 date = r['date']
@@ -161,8 +163,9 @@ def migrate_db(version):
                     "computername=:computername and computeruser=:computeruser "
                     "and script=:script", locals())
             # filling date_last_failure
-            c.execute("select computername, computeruser, script, max(datestarted) as date "
-                "from jobhistory where status='fail' group by computername, computeruser, script")
+            c.execute("select computername, computeruser, script, "
+                "max(datestarted) as date from jobhistory where status='fail' "
+                "group by computername, computeruser, script")
             c2 = getcursor()
             for r in c:
                 date = r['date']
@@ -173,9 +176,9 @@ def migrate_db(version):
                     "computername=:computername and computeruser=:computeruser "
                     "and script=:script", locals())
             # filling last_status and last_duration
-            c.execute("select computername, computeruser, script, status, duration "
-                "from jobhistory group by computername, computeruser, script having "
-                "max(datestarted)")
+            c.execute("select computername, computeruser, script, status, "
+                "duration from jobhistory group by computername, computeruser, "
+                "script having max(datestarted)")
             c2 = getcursor()
             for r in c:
                 computername = r['computername']
@@ -183,9 +186,10 @@ def migrate_db(version):
                 script = r['script']
                 status = r['status']
                 duration = r['duration']
-                c2.execute("update jobs set last_status=:status, last_duration=:duration "
-                    "where computername=:computername and computeruser=:computeruser "
-                    "and script=:script", locals())
+                c2.execute("update jobs set last_status=:status, "
+                    "last_duration=:duration where computername=:computername "
+                    "and computeruser=:computeruser and script=:script",
+                    locals())
             # changing jobhistory
             c.executescript("""
                 CREATE TABLE jobhistory2 (
@@ -203,8 +207,8 @@ def migrate_db(version):
                 "datefinished, duration, status, output) select j1.id, j2.id, "
                 "ip, datestarted, datefinished, duration, status, output "
                 "from jobhistory as j1 inner join jobs as j2 on "
-                "j2.computername=j1.computername and j2.computeruser=j1.computeruser "
-                "and j2.script=j1.script")
+                "j2.computername=j1.computername and "
+                "j2.computeruser=j1.computeruser and j2.script=j1.script")
             c.execute("drop table jobhistory")
             c.execute("alter table jobhistory2 rename to jobhistory")
             # changing jobconfig
@@ -234,7 +238,8 @@ def migrate_db(version):
                 "j2.computeruser=j1.computeruser and j2.script=j1.script")
             c.execute("drop table jobconfigalert")
             c.execute("alter table jobconfigalert2 rename to jobconfigalert")
-            c.execute("create index idx_jobhistory_datestarted on jobhistory (datestarted desc)")
+            c.execute("create index idx_jobhistory_datestarted on jobhistory "
+                "(datestarted desc)")
             # increasing schema version
             c.execute("PRAGMA user_version=1;")
     log.info("schema migration successful")
@@ -440,7 +445,8 @@ def joboutput(computername, computeruser, script, id):
     c = getcursor()
     c.execute("select h.output from jobhistory as h inner join jobs as j "
         "on h.job_id=j.id where j.computername=:computername and "
-        "j.computeruser=:computeruser and j.script=:script and h.id=:id", locals())
+        "j.computeruser=:computeruser and j.script=:script and h.id=:id",
+        locals())
     r = c.fetchone()
     if not r:
         response.status = 404
@@ -461,10 +467,9 @@ def jobhistory(computername, computeruser, script):
     c.execute("select h.id, j.computername, j.computeruser, j.script, "
         "h.datestarted, h.datefinished, h.status, h.duration "
         "from jobhistory as h inner join jobs as j on j.id=h.job_id "
-        "where j.computername=:computername "
-        "  and j.computeruser=:computeruser "
-        "  and j.script=:script "
-        "order by j.computername, j.computeruser, j.script, h.datestarted desc", (locals()))
+        "where j.computername=:computername and j.computeruser=:computeruser "
+        "and j.script=:script order by j.computername, j.computeruser, "
+        "j.script, h.datestarted desc", locals())
     history = []
     for hist in c:
         h = dict(hist)
@@ -484,8 +489,7 @@ def allhistory():
     c.execute("select h.id, j.computername, j.computeruser, j.script, "
         "h.datestarted, h.datefinished, h.status, h.duration "
         "from jobhistory as h inner join jobs as j on j.id=h.job_id "
-        "order by h.datestarted desc limit 25 offset :offset",
-            locals())
+        "order by h.datestarted desc limit 25 offset :offset", locals())
     history = []
     for hist in c:
         h = dict(hist)
@@ -557,7 +561,8 @@ def savealertemails(computername, computeruser, script):
     with db_trans() as c:
         c.execute("delete from jobconfigalert where job_id=:job_id", locals())
         for email in request.forms.emails.split():
-            c.execute("insert into jobconfigalert values (:job_id, :email)", locals())     
+            c.execute("insert into jobconfigalert values (:job_id, :email)",
+                locals())
     return redirect('/config-job/' + computername + '/' + 
         computeruser + '/' + script + '/')
 
