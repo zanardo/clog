@@ -31,7 +31,7 @@
 __VERSION__ = '0.4dev'
 
 from bottle import run, local, route, view, get, post, redirect, \
-    response, request, static_file
+    response, request, static_file, abort
 from contextlib import contextmanager
 from functools import wraps
 from hashlib import sha1
@@ -341,7 +341,6 @@ def removeuser(username):
 @requires_auth
 @requires_admin
 def newuser():
-    assert 'username' in request.forms
     username = request.forms.username
     if username.strip() == '':
         return 'invalid user!'
@@ -371,7 +370,8 @@ def forceuserpassword(username):
 def changeuseradminstatus(username, status):
     if username == currentuser():
         return 'cant change admin status for current user!'
-    assert status in ('0', '1')
+    if not status in ('0', '1'):
+        abort(400, "invalid status")
     with db_trans() as c:
         c.execute("update users set is_admin = :status "
             "where username = :username", locals())
@@ -384,8 +384,6 @@ def login():
 
 @post('/login')
 def validatelogin():
-    assert 'user' in request.forms
-    assert 'passwd' in request.forms
     user = request.forms.user
     passwd = request.forms.passwd
     if validateuserdb(user, passwd):
@@ -412,9 +410,6 @@ def changepassword():
 @post('/change-password')
 @requires_auth
 def changepasswordsave():
-    assert 'oldpasswd' in request.forms
-    assert 'newpasswd' in request.forms
-    assert 'newpasswd2' in request.forms
     oldpasswd = request.forms.oldpasswd
     newpasswd = request.forms.newpasswd
     newpasswd2 = request.forms.newpasswd2
@@ -433,7 +428,8 @@ def changepasswordsave():
 
 @route('/static/:filename')
 def static(filename):
-    assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
+    if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
+        abort(400, "invalid filename")
     return static_file('static/%s' % filename, root='.')
 
 @get('/jobs/<computername>/<computeruser>/<script>/<id>')
@@ -538,10 +534,9 @@ def purgejob(computername, computeruser, script):
 @requires_auth
 @requires_admin
 def savedaystokeep(computername, computeruser, script):
-    assert 'daystokeep' in request.forms
     daystokeep = request.forms.daystokeep
     if not re.match(r'^\d+$', daystokeep):
-        return 'invalid argument'
+        abort(400, "invalid days to keep")
     daystokeep = int(daystokeep)
     if daystokeep < 0:
         return 'days to keep must be >= 0'
@@ -556,7 +551,6 @@ def savedaystokeep(computername, computeruser, script):
 @requires_auth
 @requires_admin
 def savealertemails(computername, computeruser, script):
-    assert 'emails' in request.forms
     job_id = get_job_id(computername, computeruser, script)
     with db_trans() as c:
         c.execute("delete from jobconfigalert where job_id=:job_id", locals())
@@ -592,26 +586,32 @@ def jobs():
 
 @post('/')
 def newjob():
+    rid_regexp = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
     rid = request.forms.id
-    assert re.match(
-        r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$', rid)
+    if not re.match(rid_regexp, rid):
+        abort(400, "invalid job id")
 
     start_time = request.forms.start_time
-    assert re.match(r'^[\d+\.]+$', start_time)
+    if not re.match(r'^[\d+\.]+$', start_time):
+        abort(400, "invalid start time")
     start_time = datetime.datetime.fromtimestamp(int(float(start_time)))
 
     end_time = request.forms.end_time
-    assert re.match(r'^[\d+\.]+$', end_time)
+    if not re.match(r'^[\d+\.]+$', end_time):
+        abort(400, "invalid end time")
     end_time = datetime.datetime.fromtimestamp(int(float(end_time)))
 
     duration = request.forms.duration
-    assert re.match(r'^[0-9\.]+$', duration)
+    if not re.match(r'^[0-9\.]+$', duration):
+        abort(400, "invalid duration")
 
     status = request.forms.status
-    assert status in ('fail', 'ok')
+    if not status in ('fail', 'ok'):
+        abort(400, "invalid status")
 
     script = request.forms.script
-    assert re.match(r'^[a-zA-Z0-9\-_\.]+$', script)
+    if not re.match(r'^[a-zA-Z0-9\-_\.]+$', script):
+        abort(400, "invalid script name")
 
     output = request.forms.output or ''
     output = base64.b64decode(output)
