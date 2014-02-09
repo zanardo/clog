@@ -19,3 +19,10 @@ run-server-devel: venv db
 
 run-server: venv db
 	./.venv/bin/python clogd --host 0.0.0.0 --port 7890
+
+tests: venv
+	cp clogd tests/clogd.py
+	./.venv/bin/python tests/tests.py
+
+clean:
+	rm -f tests/clogd.py*
