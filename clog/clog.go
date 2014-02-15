@@ -48,7 +48,7 @@ import (
 )
 
 const (
-	Version       = "0.4dev"
+	Version       = "0.4"
 	MaxOutputSize = 1024 * 1024 // 1MB output tail
 )
 
