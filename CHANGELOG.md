@@ -1,6 +1,8 @@
 clog changes
 ============
 
+## 0.5 - (in development)
+
 ## v0.4 - 2014-02-15
 
 - Human readable job duration.
