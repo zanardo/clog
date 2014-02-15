@@ -1,7 +1,7 @@
 clog changes
 ============
 
-## v0.4 - (in development)
+## v0.4 - 2014-02-15
 
 - Human readable job duration.
 - Human readable last success and last failure date on index page.
