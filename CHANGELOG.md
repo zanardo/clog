@@ -3,6 +3,10 @@ clog changes
 
 ## 0.5 - (in development)
 
+## v0.4.1 - 2013-02-22
+
+- Fix last duration field not being saved.
+
 ## v0.4 - 2014-02-15
 
 - Human readable job duration.
