@@ -81,7 +81,7 @@ CREATE TABLE jobhistory (
     datefinished timestamp(0) without time zone NOT NULL,
     duration real NOT NULL,
     status text NOT NULL,
-    output bytea
+    output_sha1 character(40) NOT NULL
 );
 
 
@@ -125,6 +125,18 @@ ALTER TABLE public.jobs_id_seq OWNER TO clog;
 
 ALTER SEQUENCE jobs_id_seq OWNED BY jobs.id;
 
+
+--
+-- Name: outputs; Type: TABLE; Schema: public; Owner: clog; Tablespace: 
+--
+
+CREATE TABLE outputs (
+    sha1 character(40) NOT NULL,
+    output bytea NOT NULL
+);
+
+
+ALTER TABLE public.outputs OWNER TO clog;
 
 --
 -- Name: sessions; Type: TABLE; Schema: public; Owner: clog; Tablespace: 
@@ -248,6 +260,14 @@ ALTER TABLE ONLY jobs
 
 
 --
+-- Name: outputs_pkey; Type: CONSTRAINT; Schema: public; Owner: clog; Tablespace: 
+--
+
+ALTER TABLE ONLY outputs
+    ADD CONSTRAINT outputs_pkey PRIMARY KEY (sha1);
+
+
+--
 -- Name: sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: clog; Tablespace: 
 --
 
@@ -306,6 +326,14 @@ ALTER TABLE ONLY jobconfigalert
 
 ALTER TABLE ONLY jobhistory
     ADD CONSTRAINT jobhistory_job_id_fkey FOREIGN KEY (job_id) REFERENCES jobs(id);
+
+
+--
+-- Name: jobhistory_output_sha1_fkey; Type: FK CONSTRAINT; Schema: public; Owner: clog
+--
+
+ALTER TABLE ONLY jobhistory
+    ADD CONSTRAINT jobhistory_output_sha1_fkey FOREIGN KEY (output_sha1) REFERENCES outputs(sha1);
 
 
 --

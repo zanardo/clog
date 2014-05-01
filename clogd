@@ -337,8 +337,9 @@ def joboutput(computername, computeruser, script, id):
         raise ValueError('invalid id')
     output = ''
     with db_trans() as c:
-        c.execute("select h.output from jobhistory as h inner join jobs as j "
-            "on h.job_id=j.id where j.computername=%(computername)s and "
+        c.execute("select o.output from jobhistory as h inner join jobs as j "
+            "on h.job_id=j.id inner join outputs as o on o.sha1=h.output_sha1 "
+            "where j.computername=%(computername)s and "
             "j.computeruser=%(computeruser)s and j.script=%(script)s and h.id=%(id)s",
             locals())
         r = c.fetchone()
@@ -531,6 +532,14 @@ def newjob():
         script, ip)
     log.info('  id: %s', rid)
 
+    output_sha1 = sha1(output).hexdigest()
+    with db_trans() as c:
+        try:
+            c.execute("insert into outputs (sha1, output) values "
+                "(%(output_sha1)s, %(outputz)s)", locals())
+        except psycopg2.IntegrityError:
+            pass
+
     job_id = get_job_id(computername, computeruser, script)
     if not job_id:
         with db_trans() as c:
@@ -542,9 +551,9 @@ def newjob():
     try:
         with db_trans() as c:
             c.execute("insert into jobhistory (id, job_id, ip, "
-                "datestarted, datefinished, status, duration, output) "
+                "datestarted, datefinished, status, duration, output_sha1) "
                 "values (%(rid)s, %(job_id)s, %(ip)s, %(start_time)s, "
-                "%(end_time)s, %(status)s, %(duration)s, %(outputz)s)",
+                "%(end_time)s, %(status)s, %(duration)s, %(output_sha1)s)",
                 locals())
             if status == 'ok':
                 c.execute("update jobs set date_last_success=%(start_time)s, "
