@@ -1,4 +1,4 @@
-Bottle==0.12.4
+Bottle==0.12.7
 waitress==0.8.8
 psycopg2==2.5.2
 PyYAML==3.10
