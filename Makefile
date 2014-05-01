@@ -1,4 +1,4 @@
-all: db venv
+all: venv
 
 venv: .venv/bin/activate
 
