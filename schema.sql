@@ -317,16 +317,6 @@ ALTER TABLE ONLY sessions
 
 
 --
--- Name: public; Type: ACL; Schema: -; Owner: zanardo
---
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM zanardo;
-GRANT ALL ON SCHEMA public TO zanardo;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
 

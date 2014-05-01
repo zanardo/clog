@@ -37,18 +37,42 @@ from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
 
-import threading, sqlite3, re, datetime, argparse, logging, \
-    random, bottle, time, subprocess, zlib, traceback, base64
+import re
+import sys
+import yaml
+import time
+import zlib
+import random
+import bottle
+import base64
+import logging
+import datetime
+import argparse
+import threading
+import traceback
+import subprocess
+import psycopg2
+import psycopg2.extras
+import psycopg2.extensions
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
 log = logging.getLogger(__name__)
 
-# schema version
-SCHEMA = 1
-
 CONFIG = {}
-CONFIG['dbname'] = 'clogd.db'
+
+def load_config(config_path):
+    config = {}
+    log.info("loading configuration from %s", config_path)
+    with open(config_path, "r") as fp:
+        config = yaml.load(fp)
+        log.info("+ PostgreSQL Server: %s", config['pg_host'])
+        log.info("+ PostgreSQL DB: %s", config['pg_db'])
+        log.info("+ PostgreSQL User: %s", config['pg_user'])
+        log.info("+ Debug: %s", config['debug'])
+        log.info("+ Host: %s", config['host'])
+        log.info("+ Port: %s", config['port'])
+        return config
 
 # Bottle has a low limit for post data. Let's make it larger.
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
@@ -86,191 +110,36 @@ def getctx():
     return dict(version=__VERSION__, username=user, isadmin=user_is_admin)
 
 def getdb():
-    # Return a database connection handle per thread
-    if not hasattr(local, 'db'):
-        local.db = sqlite3.connect(CONFIG['dbname'],
-                                   detect_types=sqlite3.PARSE_DECLTYPES)
-        # Access results via dict() by column name
-        local.db.row_factory = sqlite3.Row
-        local.db.text_factory = str
-        c = local.db.cursor()
-        c.execute("PRAGMA foreign_keys = ON;")
-        c.execute("PRAGMA synchronous = NORMAL;")
-        c.execute("PRAGMA journal_mode = WAL;")
-        c.execute("PRAGMA busy_timeout = 200;")
-        # Migrate database schema version if needed.
-        DatabaseSchemaMigration(local.db, SCHEMA)
+    if not hasattr(local, 'db') or local.db.closed:
+        local.db = psycopg2.connect(host=CONFIG['pg_host'],
+            database=CONFIG['pg_db'], user=CONFIG['pg_user'],
+            password=CONFIG['pg_passwd'],
+            cursor_factory=psycopg2.extras.DictCursor)
     return local.db
-
-def getcursor():
-    # Return a new cursor for database access
-    return getdb().cursor()
 
 @contextmanager
 def db_trans():
-    # Open a new database transaction and commit on context exit, or rollback in
-    # case anything fails. Dispose the cursor on finish.
+    open_trans = False
     dbh = getdb()
+    if dbh.get_transaction_status() != psycopg2.extensions.TRANSACTION_STATUS_IDLE:
+        open_trans = True
     c = dbh.cursor()
     try:
-        yield c     # New cursor
+        yield c
     except:
         dbh.rollback()
         raise
     else:
-        dbh.commit()
+        if not open_trans:
+            dbh.commit()
     finally:
         c.close()
 
-class DatabaseSchemaMigration(object):
-    """
-    Migrate schema versions from database. Versions are stored in
-    PRAGMA user_version on the SQLite database, and checked on getdb()
-    """
-    def __init__(self, db_conn, destination_version):
-        self.db_conn = db_conn
-        self.destination_version = destination_version
-        self.current_schema_version = self._get_version()
-        if self.current_schema_version < self.destination_version:
-            self._migrate(db_conn, destination_version)
-
-    def _get_version(self):
-        """
-        Fetch the current schema version from database.
-        """
-        c = self.db_conn.cursor()
-        c.execute("PRAGMA user_version")
-        return int(c.fetchone()[0])
-
-    def _migrate(self, db_conn, destination_version):
-        """
-        Migrate the schema on database with connection db_conn to
-        destination_version.
-        """
-        c = self.db_conn.cursor()
-        try:
-            log.info("starting schema migration from %d to %d",
-                self.current_schema_version, self.destination_version)
-            if self.current_schema_version == 0:
-                log.info("applying schema 1 modifications")
-                c.executescript("""
-                    CREATE TABLE jobs (
-                        id integer not null primary key,
-                        computername text not null,
-                        computeruser text not null,
-                        script text not null,
-                        date_last_success timestamp,
-                        date_last_failure timestamp,
-                        last_status text,
-                        last_duration float
-                    );
-                    CREATE UNIQUE INDEX idx_jobs_job ON jobs(computername,
-                        computeruser, script);
-                """)
-                c.execute("insert into jobs (computername, computeruser, script)"
-                    "select computername, computeruser, script from jobhistory "
-                    "group by computername, computeruser, script")
-                # filling date_last_success
-                c.execute("select computername, computeruser, script, "
-                    "max(datestarted) as date from jobhistory where "
-                    "status='ok' group by computername, computeruser, script")
-                c2 = getcursor()
-                for r in c:
-                    date = r['date']
-                    computername = r['computername']
-                    computeruser = r['computeruser']
-                    script = r['script']
-                    c2.execute("update jobs set date_last_success=:date where "
-                        "computername=:computername and computeruser=:computeruser "
-                        "and script=:script", locals())
-                # filling date_last_failure
-                c.execute("select computername, computeruser, script, "
-                    "max(datestarted) as date from jobhistory where status='fail' "
-                    "group by computername, computeruser, script")
-                c2 = getcursor()
-                for r in c:
-                    date = r['date']
-                    computername = r['computername']
-                    computeruser = r['computeruser']
-                    script = r['script']
-                    c2.execute("update jobs set date_last_failure=:date where "
-                        "computername=:computername and computeruser=:computeruser "
-                        "and script=:script", locals())
-                # filling last_status and last_duration
-                c.execute("select computername, computeruser, script, status, "
-                    "duration from jobhistory group by computername, computeruser, "
-                    "script having max(datestarted)")
-                c2 = getcursor()
-                for r in c:
-                    computername = r['computername']
-                    computeruser = r['computeruser']
-                    script = r['script']
-                    status = r['status']
-                    duration = r['duration']
-                    c2.execute("update jobs set last_status=:status, "
-                        "last_duration=:duration where computername=:computername "
-                        "and computeruser=:computeruser and script=:script",
-                        locals())
-                # changing jobhistory
-                c.executescript("""
-                    CREATE TABLE jobhistory2 (
-                        id text not null primary key,
-                        job_id integer not null references jobs(id),
-                        ip text not null,
-                        datestarted timestamp not null,
-                        datefinished timestamp not null,
-                        duration float not null,
-                        status text not null,
-                        output blob
-                    );
-                """)
-                c.execute("insert into jobhistory2 (id, job_id, ip, datestarted, "
-                    "datefinished, duration, status, output) select j1.id, j2.id, "
-                    "ip, datestarted, datefinished, duration, status, output "
-                    "from jobhistory as j1 inner join jobs as j2 on "
-                    "j2.computername=j1.computername and "
-                    "j2.computeruser=j1.computeruser and j2.script=j1.script")
-                c.execute("drop table jobhistory")
-                c.execute("alter table jobhistory2 rename to jobhistory")
-                # changing jobconfig
-                c.executescript("""
-                    CREATE TABLE jobconfig2 (
-                        job_id integer not null references jobs(id) primary key,
-                        daystokeep int not null
-                    );
-                """)
-                c.execute("insert into jobconfig2 (job_id, daystokeep) select "
-                    "j2.id, j1.daystokeep from jobconfig as j1 inner join jobs "
-                    "as j2 on j2.computername=j1.computername and "
-                    "j2.computeruser=j1.computeruser and j2.script=j1.script")
-                c.execute("drop table jobconfig")
-                c.execute("alter table jobconfig2 rename to jobconfig")
-                # changing jobconfigalert
-                c.executescript("""
-                    CREATE TABLE jobconfigalert2 (
-                        job_id integer not null references jobs(id),
-                        email text not null,
-                        PRIMARY KEY(job_id, email)
-                    );
-                """)
-                c.execute("insert into jobconfigalert2 (job_id, email) select "
-                    "j2.id, j1.email from jobconfigalert as j1 inner join jobs "
-                    "as j2 on j2.computername=j1.computername and "
-                    "j2.computeruser=j1.computeruser and j2.script=j1.script")
-                c.execute("drop table jobconfigalert")
-                c.execute("alter table jobconfigalert2 rename to jobconfigalert")
-                c.execute("create index idx_jobhistory_datestarted on jobhistory "
-                    "(datestarted desc)")
-                # increasing schema version
-                c.execute("PRAGMA user_version=1;")
-        except Exception as ex:
-            self.db_conn.rollback()
-            raise
-        else:
-            self.db_conn.commit()
-        finally:
-            c.close()
-        log.info("schema migration successful")
+def db_select(sql, *args):
+    with db_trans() as c:
+        c.execute(sql, *args)
+        for row in c:
+            yield dict(row)
 
 def requires_auth(f):
     @wraps(f)
@@ -293,66 +162,66 @@ def requires_admin(f):
 
 def validateuserdb(user, passwd):
     passwdsha1 = sha1(passwd).hexdigest()
-    c = getcursor()
-    c.execute("select username from users where username = :user "
-        "and password = :passwdsha1", locals())
-    r = c.fetchone()
-    return bool(r)
+    with db_trans() as c:
+        c.execute("select username from users where username=%(user)s "
+            "and password=%(passwdsha1)s", locals())
+        r = c.fetchone()
+        return bool(r)
 
 def validatesession(session_id):
-    c = getcursor()
-    c.execute("select session_id from sessions where session_id = :session_id",
-        locals())
-    r = c.fetchone()
-    return bool(r)
+    with db_trans() as c:
+        c.execute("select session_id from sessions where session_id=%(session_id)s",
+            locals())
+        r = c.fetchone()
+        return bool(r)
 
 def currentuser():
     session_id = request.get_cookie('clog')
-    c = getcursor()
-    c.execute("select username from sessions "
-        "where session_id = :session_id", locals())
-    return c.fetchone()['username']
+    with db_trans() as c:
+        c.execute("select username from sessions "
+            "where session_id=%(session_id)s", locals())
+        return c.fetchone()['username']
 
 def userisadmin(username):
-    c = getcursor()
-    c.execute("select is_admin from users where username = :username",
-        locals())
-    return c.fetchone()['is_admin']
+    with db_trans() as c:
+        c.execute("select is_admin from users where username=%(username)s",
+            locals())
+        return c.fetchone()['is_admin']
 
 def removesession(session_id):
     with db_trans() as c:
-        c.execute("delete from sessions where session_id = :session_id",
+        c.execute("delete from sessions where session_id=%(session_id)s",
             locals())
 
 def makesession(user):
     with db_trans() as c:
         session_id = str(uuid4())
         c.execute("insert into sessions (session_id, username) "
-            "values (:session_id, :user)", locals())
-    return session_id
+            "values (%(session_id)s, %(user)s)", locals())
+        return session_id
 
 def get_job_id(computername, computeruser, script):
-    c = getcursor()
-    c.execute("select id from jobs where computername=:computername "
-        "and computeruser=:computeruser and script=:script", locals())
-    r = c.fetchone()
-    if not r:
-        return None
-    else:
-        return r[0]
+    with db_trans() as c:
+        c.execute("select id from jobs where computername=%(computername)s "
+            "and computeruser=%(computeruser)s and script=%(script)s", locals())
+        r = c.fetchone()
+        if not r:
+            return None
+        else:
+            return r[0]
 
 @get('/admin')
 @view('admin')
 @requires_auth
 @requires_admin
 def admin():
-    c = getcursor()
-    c.execute("select username, is_admin from users "
-        "order by username")
     users = []
-    for user in c:
-        user = dict(user)
-        users.append(user)
+    with db_trans() as c:
+        c.execute("select username, is_admin from users "
+            "order by username")
+        for user in c:
+            user = dict(user)
+            users.append(user)
     return dict(ctx=getctx(), users=users)
 
 @get('/admin/remove-user/:username')
@@ -362,7 +231,8 @@ def removeuser(username):
     if username == currentuser():
         return 'cant remove current user!'
     with db_trans() as c:
-        c.execute("delete from users where username = :username", locals())
+        c.execute("delete from sessions where username=%(username)s", locals())
+        c.execute("delete from users where username=%(username)s", locals())
     return redirect('/admin')
 
 @post('/admin/save-new-user')
@@ -375,8 +245,8 @@ def newuser():
     password = str(int(random.random() * 999999))
     sha1password = sha1(password).hexdigest()
     with db_trans() as c:
-        c.execute("insert into users (username, password, is_admin ) "
-            "values (:username, :sha1password, 0)", locals())
+        c.execute("insert into users (username, password, is_admin) "
+            "values (%(username)s, %(sha1password)s, 'f')", locals())
     return u'user %s created with password %s' % (username, password)
 
 @get('/admin/force-new-password/:username')
@@ -388,8 +258,8 @@ def forceuserpassword(username):
     if username == currentuser():
         return 'cant change password for current user!'
     with db_trans() as c:
-        c.execute("update users set password = :sha1password "
-            "where username = :username", locals())
+        c.execute("update users set password=%(sha1password)s "
+            "where username=%(username)s", locals())
     return u'user %s had password changed to: %s' % (username, password)
 
 @get('/admin/change-user-admin-status/:username/:status')
@@ -400,9 +270,10 @@ def changeuseradminstatus(username, status):
         return 'cant change admin status for current user!'
     if not status in ('0', '1'):
         abort(400, "invalid status")
+    status = bool(int(status))
     with db_trans() as c:
-        c.execute("update users set is_admin = :status "
-            "where username = :username", locals())
+        c.execute("update users set is_admin=%(status)s "
+            "where username=%(username)s", locals())
     return redirect('/admin')
 
 @get('/login')
@@ -450,8 +321,8 @@ def changepasswordsave():
         return 'new passwords do not match!'
     passwdsha1 = sha1(newpasswd).hexdigest()
     with db_trans() as c:
-        c.execute("update users set password = :passwdsha1 "
-            "where username = :username", locals())
+        c.execute("update users set password=%(passwdsha1)s "
+            "where username=%(username)s", locals())
     return redirect('/')
 
 @route('/static/:filename')
@@ -466,18 +337,18 @@ def joboutput(computername, computeruser, script, id):
     if not re.match(r'^[a-f0-9-]{36}$', id):
         raise ValueError('invalid id')
     output = ''
-    c = getcursor()
-    c.execute("select h.output from jobhistory as h inner join jobs as j "
-        "on h.job_id=j.id where j.computername=:computername and "
-        "j.computeruser=:computeruser and j.script=:script and h.id=:id",
-        locals())
-    r = c.fetchone()
-    if not r:
-        response.status = 404
-        return 'not found'
-    else:
-        response.content_type = 'text/plain'
-        return zlib.decompress(r['output'])
+    with db_trans() as c:
+        c.execute("select h.output from jobhistory as h inner join jobs as j "
+            "on h.job_id=j.id where j.computername=%(computername)s and "
+            "j.computeruser=%(computeruser)s and j.script=%(script)s and h.id=%(id)s",
+            locals())
+        r = c.fetchone()
+        if not r:
+            response.status = 404
+            return 'not found'
+        else:
+            response.content_type = 'text/plain'
+            return zlib.decompress(r['output'])
 
 @get('/jobs/<computername>/<computeruser>/<script>/')
 @view('history')
@@ -487,19 +358,19 @@ def jobhistory(computername, computeruser, script):
     ctx['computername'] = computername
     ctx['computeruser'] = computeruser
     ctx['script'] = script
-    c = getcursor()
-    c.execute("select h.id, j.computername, j.computeruser, j.script, "
-        "h.datestarted, h.datefinished, h.status, h.duration "
-        "from jobhistory as h inner join jobs as j on j.id=h.job_id "
-        "where j.computername=:computername and j.computeruser=:computeruser "
-        "and j.script=:script order by j.computername, j.computeruser, "
-        "j.script, h.datestarted desc", locals())
-    history = []
-    for hist in c:
-        h = dict(hist)
-        h['duration'] = duration_to_human(h['duration'])
-        history.append(h)
-    return dict(history=history, ctx=ctx)
+    with db_trans() as c:
+        c.execute("select h.id, j.computername, j.computeruser, j.script, "
+            "h.datestarted, h.datefinished, h.status, h.duration "
+            "from jobhistory as h inner join jobs as j on j.id=h.job_id "
+            "where j.computername=%(computername)s and j.computeruser=%(computeruser)s "
+            "and j.script=%(script)s order by j.computername, j.computeruser, "
+            "j.script, h.datestarted desc", locals())
+        history = []
+        for hist in c:
+            h = dict(hist)
+            h['duration'] = duration_to_human(h['duration'])
+            history.append(h)
+        return dict(history=history, ctx=ctx)
 
 @get('/history')
 @view('historytable')
@@ -509,17 +380,17 @@ def allhistory():
     if 'offset' in request.query:
         if re.match(r'^\d+$', request.query.offset):
             offset = int(request.query.offset)*25
-    c = getcursor()
-    c.execute("select h.id, j.computername, j.computeruser, j.script, "
-        "h.datestarted, h.datefinished, h.status, h.duration "
-        "from jobhistory as h inner join jobs as j on j.id=h.job_id "
-        "order by h.datestarted desc limit 25 offset :offset", locals())
-    history = []
-    for hist in c:
-        h = dict(hist)
-        h['duration'] = duration_to_human(h['duration'])
-        history.append(h)
-    return dict(history=history, offset=offset)
+    with db_trans() as c:
+        c.execute("select h.id, j.computername, j.computeruser, j.script, "
+            "h.datestarted, h.datefinished, h.status, h.duration "
+            "from jobhistory as h inner join jobs as j on j.id=h.job_id "
+            "order by h.datestarted desc limit 25 offset %(offset)s", locals())
+        history = []
+        for hist in c:
+            h = dict(hist)
+            h['duration'] = duration_to_human(h['duration'])
+            history.append(h)
+        return dict(history=history, offset=offset)
 
 @get('/config-job/<computername>/<computeruser>/<script>/')
 @view('config-job')
@@ -531,20 +402,20 @@ def configjob(computername, computeruser, script):
     ctx['computeruser'] = computeruser
     ctx['script'] = script
     daystokeep = 30
-    c = getcursor()
-    c.execute("select c.daystokeep from jobconfig as c inner join "
-        "jobs as j on j.id=c.job_id where j.computername=:computername and "
-        "j.computeruser=:computeruser and j.script=:script", locals())
-    r = c.fetchone()
-    if r:
-        daystokeep = r['daystokeep']
-    c.execute("select a.email from jobconfigalert as a inner join "
-        "jobs as j on j.id=a.job_id where j.computername=:computername and "
-        "j.computeruser=:computeruser and j.script=:script", locals())
-    emails = []
-    for r in c:
-        emails.append(r['email'])
-    return dict(ctx=ctx, daystokeep=daystokeep, emails="\n".join(emails))
+    with db_trans() as c:
+        c.execute("select c.daystokeep from jobconfig as c inner join "
+            "jobs as j on j.id=c.job_id where j.computername=%(computername)s and "
+            "j.computeruser=%(computeruser)s and j.script=%(script)s", locals())
+        r = c.fetchone()
+        if r:
+            daystokeep = r['daystokeep']
+        c.execute("select a.email from jobconfigalert as a inner join "
+            "jobs as j on j.id=a.job_id where j.computername=%(computername)s and "
+            "j.computeruser=%(computeruser)s and j.script=%(script)s", locals())
+        emails = []
+        for r in c:
+            emails.append(r['email'])
+        return dict(ctx=ctx, daystokeep=daystokeep, emails="\n".join(emails))
 
 @post('/purge-job/<computername>/<computeruser>/<script>/')
 @requires_auth
@@ -552,10 +423,10 @@ def configjob(computername, computeruser, script):
 def purgejob(computername, computeruser, script):
     job_id = get_job_id(computername, computeruser, script)
     with db_trans() as c:
-        c.execute("delete from jobhistory where job_id=:job_id", locals())
-        c.execute("delete from jobconfig where job_id=:job_id", locals())
-        c.execute("delete from jobconfigalert where job_id=:job_id", locals())
-        c.execute("delete from jobs where id=:job_id", locals())
+        c.execute("delete from jobhistory where job_id=%(job_id)s", locals())
+        c.execute("delete from jobconfig where job_id=%(job_id)s", locals())
+        c.execute("delete from jobconfigalert where job_id=%(job_id)s", locals())
+        c.execute("delete from jobs where id=%(job_id)s", locals())
     return redirect('/')
 
 @post('/save-daystokeep/<computername>/<computeruser>/<script>/')
@@ -570,8 +441,11 @@ def savedaystokeep(computername, computeruser, script):
         return 'days to keep must be >= 0'
     job_id = get_job_id(computername, computeruser, script)
     with db_trans() as c:
-        c.execute("replace into jobconfig (job_id, daystokeep) "
-            "values (:job_id, :daystokeep)", locals())
+        c.execute("update jobconfig set daystokeep=%(daystokeep)s "
+            "where job_id=%(job_id)s", locals())
+        if c.rowcount == 0:
+            c.execute("insert into jobconfig (job_id, daystokeep) "
+                "values (%(job_id)s, %(daystokeep)s)", locals())
     return redirect('/config-job/' + computername + '/' +
         computeruser + '/' + script + '/')
 
@@ -581,9 +455,9 @@ def savedaystokeep(computername, computeruser, script):
 def savealertemails(computername, computeruser, script):
     job_id = get_job_id(computername, computeruser, script)
     with db_trans() as c:
-        c.execute("delete from jobconfigalert where job_id=:job_id", locals())
+        c.execute("delete from jobconfigalert where job_id=%(job_id)s", locals())
         for email in request.forms.emails.split():
-            c.execute("insert into jobconfigalert values (:job_id, :email)",
+            c.execute("insert into jobconfigalert values (%(job_id)s, %(email)s)",
                 locals())
     return redirect('/config-job/' + computername + '/' +
         computeruser + '/' + script + '/')
@@ -598,19 +472,19 @@ def index():
 @view('jobstable')
 @requires_auth
 def jobs():
-    c = getcursor()
-    c.execute("select computername, computeruser, script, "
-        "date_last_success, date_last_failure, last_status, "
-        "last_duration from jobs order by computername, computeruser, "
-        "script")
-    jobs = []
-    for job in c:
-        j = dict(job)
-        j['date_last_success'] = timediff_to_human(j['date_last_success'])
-        j['date_last_failure'] = timediff_to_human(j['date_last_failure'])
-        j['last_duration'] = duration_to_human(j['last_duration'])
-        jobs.append(j)
-    return dict(jobs=jobs)
+    with db_trans() as c:
+        c.execute("select computername, computeruser, script, "
+            "date_last_success, date_last_failure, last_status, "
+            "last_duration from jobs order by computername, computeruser, "
+            "script")
+        jobs = []
+        for job in c:
+            j = dict(job)
+            j['date_last_success'] = timediff_to_human(j['date_last_success'])
+            j['date_last_failure'] = timediff_to_human(j['date_last_failure'])
+            j['last_duration'] = duration_to_human(j['last_duration'])
+            jobs.append(j)
+        return dict(jobs=jobs)
 
 @post('/')
 def newjob():
@@ -663,24 +537,25 @@ def newjob():
         with db_trans() as c:
             c.execute("insert into jobs (computername, computeruser, "
                 "script, last_status, last_duration) values "
-                "(:computername, :computeruser, :script, :status, :duration)",
-                locals())
-            job_id = c.lastrowid
+                "(%(computername)s, %(computeruser)s, %(script)s, "
+                "%(status)s, %(duration)s) returning id", locals())
+            job_id = c.fetchone()[0]
     try:
         with db_trans() as c:
             c.execute("insert into jobhistory (id, job_id, ip, "
                 "datestarted, datefinished, status, duration, output) "
-                "values (:rid, :job_id, :ip, :start_time, :end_time, :status, "
-                ":duration, :outputz)", locals())
+                "values (%(rid)s, %(job_id)s, %(ip)s, %(start_time)s, "
+                "%(end_time)s, %(status)s, %(duration)s, %(outputz)s)",
+                locals())
             if status == 'ok':
-                c.execute("update jobs set date_last_success=:start_time, "
-                    "last_status='ok', last_duration=:duration "
-                    "where id=:job_id", locals())
+                c.execute("update jobs set date_last_success=%(start_time)s, "
+                    "last_status='ok', last_duration=%(duration)s "
+                    "where id=%(job_id)s", locals())
             else:
-                c.execute("update jobs set date_last_failure=:start_time, "
-                    "last_status='fail', last_duration=:duration "
-                    "where id=:job_id", locals())
-    except sqlite3.IntegrityError:
+                c.execute("update jobs set date_last_failure=%(start_time)s, "
+                    "last_status='fail', last_duration=%(duration)s "
+                    "where id=%(job_id)s", locals())
+    except psycopg2.IntegrityError:
         # Ignoring duplicate insertion.
         return 'ok'
     else:
@@ -692,56 +567,56 @@ def newjob():
                     send_alert(email, computername, computeruser, script,
                         status, output)
             elif status == 'ok':
-                c = getcursor()
-                c.execute("select status from jobhistory where job_id=:job_id "
-                    "order by datestarted desc limit 1 offset 1", locals())
-                r = c.fetchone()
-                if r and r['status'] == 'fail':
-                    for email in emails:
-                        log.info("  job ok, sending alert to %s", email)
-                        send_alert(email, computername, computeruser, script,
-                            status, output)
+                with db_trans() as c:
+                    c.execute("select status from jobhistory where job_id=%(job_id)s "
+                        "order by datestarted desc limit 1 offset 1", locals())
+                    r = c.fetchone()
+                    if r and r['status'] == 'fail':
+                        for email in emails:
+                            log.info("  job ok, sending alert to %s", email)
+                            send_alert(email, computername, computeruser, script,
+                                status, output)
         return 'ok'
 
 # Get notification e-mails for a job.
 def getalertemails(computername, computeruser, script):
     job_id = get_job_id(computername, computeruser, script)
-    c = getcursor()
-    c.execute("select email from jobconfigalert where job_id=:job_id",
-        locals())
-    emails = []
-    for row in c:
-        emails.append(row['email'])
-    return emails
+    with db_trans() as c:
+        c.execute("select email from jobconfigalert where job_id=%(job_id)s",
+            locals())
+        emails = []
+        for row in c:
+            emails.append(row['email'])
+        return emails
 
 # Delete login sessions older than 7 days
 def purge_sessions():
     with db_trans() as c:
-        c.execute("delete from sessions where julianday('now') - "
-            "julianday(date_login) > 7")
+        c.execute("delete from sessions where date(now())-"
+            "date(date_login) > 7")
         if c.rowcount > 0:
             log.info('maint_thread: purged %s login sessions', c.rowcount)
 
 # Delete old entries on jobhistory from database.
 def purge_jobhistory():
-    c = getcursor()
-    c.execute("select id from jobs")
-    for job in c:
-        job_id = job['id']
-        c2 = getcursor()
-        c2.execute("select daystokeep from jobconfig where job_id=:job_id",
-            locals())
-        daystokeep = 30
-        r = c2.fetchone()
-        if r:
-            daystokeep = r['daystokeep']
-        with db_trans() as c3:
-            c3.execute("delete from jobhistory where "
-                "julianday('now')-julianday(datestarted) > :daystokeep and "
-                "job_id=:job_id", locals())
-            if c3.rowcount > 0:
-                log.debug("maint_thread: purged %s entries for jobhistory",
-                    c3.rowcount)
+    with db_trans() as c:
+        c.execute("select id from jobs")
+        for job in c:
+            job_id = job['id']
+            with db_trans() as c2:
+                c2.execute("select daystokeep from jobconfig where job_id=%(job_id)s",
+                    locals())
+                daystokeep = 30
+                r = c2.fetchone()
+                if r:
+                    daystokeep = r['daystokeep']
+                with db_trans() as c3:
+                    c3.execute("delete from jobhistory where "
+                        "date(now())-date(datestarted) > %(daystokeep)s and "
+                        "job_id=%(job_id)s", locals())
+                    if c3.rowcount > 0:
+                        log.debug("maint_thread: purged %s entries for jobhistory",
+                            c3.rowcount)
 
 def send_alert(email, computername, computeruser, script, status, output):
     subject = ''
@@ -775,25 +650,18 @@ def maint_thread():
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+    if len(sys.argv) == 1:
+        log.error("usage: %s <config.yaml>", sys.argv[0])
+        sys.exit(1)
 
-    parser.add_argument('--host', help='host to listen for connections',
-        default='0.0.0.0')
-    parser.add_argument('--port', help='port to listen for connections',
-        default=7890, type=int)
-    parser.add_argument('--debug', help='run clogd in debug mode',
-        default=False, action='store_true')
-
-    args = parser.parse_args()
-
-    # Force start database connection so schema migration can be started.
-    getcursor()
+    CONFIG = load_config(sys.argv[1])
 
     # Starting maintenance thread
     t = threading.Thread(target=maint_thread)
     t.daemon = True
     t.start()
 
-    log.info('starting clogd %s on %s:%d', __VERSION__, args.host, args.port)
-    run(host=args.host, port=args.port, debug=args.debug,
-        server='waitress', reloader=args.debug)
+    log.info('starting clogd %s on %s:%d', __VERSION__, CONFIG['host'],
+        CONFIG['port'])
+    run(host=CONFIG['host'], port=CONFIG['port'], debug=CONFIG['debug'],
+        server='waitress', reloader=CONFIG['debug'])
