@@ -3,6 +3,8 @@ clog changes
 
 ## 0.5 - (in development)
 
+- Database migration from SQLite to PostgreSQL.
+
 ## v0.4.1 - 2013-02-22
 
 - Fix last duration field not being saved.
