@@ -4,6 +4,8 @@ clog changes
 ## 0.5 - (in development)
 
 - Database migration from SQLite to PostgreSQL.
+- Output text is deduplicated on saving, reducing storage size for frequently
+  identical job outputs.
 
 ## v0.4.1 - 2014-02-22
 
@@ -13,7 +15,7 @@ clog changes
 
 - Human readable job duration.
 - Human readable last success and last failure date on index page.
-- Reestructured database for better performance on jobs and history pages.
+- Restructured database for better performance on jobs and history pages.
 - Database schema auto migration on clog server startup.
 
 ## v0.3 - 2013-11-15
