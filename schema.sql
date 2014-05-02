@@ -191,7 +191,7 @@ COPY jobconfigalert (job_id, email) FROM stdin;
 -- Data for Name: jobhistory; Type: TABLE DATA; Schema: public; Owner: clog
 --
 
-COPY jobhistory (id, job_id, ip, datestarted, datefinished, duration, status, output) FROM stdin;
+COPY jobhistory (id, job_id, ip, datestarted, datefinished, duration, status, output_sha1) FROM stdin;
 \.
 
 
