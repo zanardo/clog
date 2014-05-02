@@ -6,6 +6,7 @@ clog changes
 - Database migration from SQLite to PostgreSQL.
 - Output text is deduplicated on saving, reducing storage size for frequently
   identical job outputs.
+- clog client returns as a Python script, ditching Go.
 
 ## v0.4.1 - 2014-02-22
 
