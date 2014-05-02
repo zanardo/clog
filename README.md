@@ -7,15 +7,35 @@ fail.
 
 # Server installation
 
-clog server is developed in Python and is tested only in Linux.
+clog server is developed in Python, needs PostgreSQL and is tested only in
+Linux.
 
     git clone https://github.com/zanardo/clog.git
     cd clog
     make
 
+Create a new user in PostgreSQL, which will own the database. The user should
+have login role, and should not have superuser, create database or other
+privileges. Sample:
+
+    createuser -ClRS clog
+
+Create a new database in PostgreSQL, owned by the new user:
+
+    createdb -E UTF-8 -l en_US.UTF-8 -O clog -T template0 clog
+
+Import the initial database schema:
+
+    psql -U clog clog < schema.sql
+
+Configure clogd:
+
+    cp config_example.yaml config.yaml
+    $EDITOR config.yaml
+
 You can run `clogd` with `make run-server` or start if with supervisor:
 
-    ./.venv/bin/python clogd --host 0.0.0.0 --port 7890
+    ./.venv/bin/python clogd config.yaml
 
 After the installation, access with a browser, with user `admin` and password
 `admin`, create a new user for you, and delete the `admin` user.
