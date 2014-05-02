@@ -349,7 +349,7 @@ def joboutput(computername, computeruser, script, id):
             response.status = 404
             return 'not found'
         else:
-            response.content_type = 'text/plain'
+            response.content_type = 'text/plain; charset=utf-8'
             return zlib.decompress(r['output'])
 
 @get('/jobs/<computername>/<computeruser>/<script>/')
