@@ -42,14 +42,10 @@ After the installation, access with a browser, with user `admin` and password
 
 # Client installation
 
-clog client is developed in Go and is tested on Linux and Windows.
+clog client is written in Python 2.7 and does not need any special module more
+than the Python standard library. You can install from source distribution:
 
-Just compile `clog/clog.go` with Go in Linux or Windows:
-
-    go build clog.go
-
-You can copy `clog` executable (`clog.exe` on Windows) somewhere on your
-`$PATH` and it is done.
+    make install-cli
 
 # Client usage
 
