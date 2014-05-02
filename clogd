@@ -89,6 +89,8 @@ def timediff_to_human(seconds):
     if seconds is None:
         return ''
     diff = (datetime.datetime.now()-seconds).total_seconds()
+    if diff < 0:
+        return "in the future"
     if diff < 1:
         return '%d ms' % (diff*1000.0)
     if diff < 60:
