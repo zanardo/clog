@@ -44,7 +44,6 @@ import time
 import zlib
 import random
 import bottle
-import base64
 import logging
 import datetime
 import threading
@@ -517,8 +516,7 @@ def newjob():
     if not re.match(r'^[a-zA-Z0-9\-_\.]+$', script):
         abort(400, "invalid script name")
 
-    output = request.forms.output or ''
-    output = base64.b64decode(output)
+    output = request.forms.output.encode('utf-8') or ''
     outputz = buffer(zlib.compress(output))
 
     computername = request.forms.computername
