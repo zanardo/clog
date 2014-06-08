@@ -1,6 +1,6 @@
 ---
 pg_host: localhost
-pg_db: clog
+pg_db: clog_dev
 pg_user: clog
 pg_passwd: clog
 host: 127.0.0.1
