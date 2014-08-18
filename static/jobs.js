@@ -1,4 +1,4 @@
-var screen = 'jobs';
+var cur_screen = 'jobs';
 var historyOffset = 0;
 
 function updateScreen(jobs) {
@@ -7,7 +7,7 @@ function updateScreen(jobs) {
 }
 
 function loadJobs() {
-	screen = 'jobs';
+	cur_screen = 'jobs';
 	document.getElementById('btnloadjobs').style.fontWeight = 'bold';
 	document.getElementById('btnloadhistory').style.fontWeight = 'normal';
 	document.getElementById('jobstbl').style.opacity = 0.5;
@@ -34,7 +34,7 @@ function historyNext() {
 }
 
 function loadHistory() {
-	screen = 'history';
+	cur_screen = 'history';
 	document.getElementById('btnloadhistory').style.fontWeight = 'bold';
 	document.getElementById('btnloadjobs').style.fontWeight = 'normal';
 	document.getElementById('jobstbl').style.opacity = 0.5;
@@ -50,18 +50,18 @@ function loadHistory() {
 }
 
 function reload() {
-	if(screen == 'jobs') {
+	if(cur_screen == 'jobs') {
 		loadJobs();
 	}
-	else if(screen == 'history') {
+	else if(cur_screen == 'history') {
 		loadHistory();
 	}
 }
 
 function load() {
-	screen = 'jobs';
+	cur_screen = 'jobs';
 	if(window.location.hash == '#history') {
-		screen = 'history';
+		cur_screen = 'history';
 		historyOffset = 0;
 	}
 	reload();
