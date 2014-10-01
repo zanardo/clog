@@ -135,12 +135,6 @@ def db_trans():
     finally:
         c.close()
 
-def db_select(sql, *args):
-    with db_trans() as c:
-        c.execute(sql, *args)
-        for row in c:
-            yield dict(row)
-
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
