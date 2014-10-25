@@ -9,3 +9,7 @@ venv: .venv/bin/activate
 
 install-cli:
 	sudo install -o root -g root -m 755 clog /usr/bin/clog
+
+clean:
+	rm -f *.pyc
+	rm -rf .venv
