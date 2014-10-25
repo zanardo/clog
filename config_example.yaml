@@ -1,8 +1,0 @@
----
-pg_host: localhost
-pg_db: clog
-pg_user: clog
-pg_passwd: ***password***
-host: 0.0.0.0
-port: 7890
-debug: false
