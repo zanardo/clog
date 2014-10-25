@@ -645,3 +645,8 @@ def maint_thread():
 
 
 app = bottle.default_app()
+
+
+if __name__ == '__main__':
+    # For development
+    bottle.run(host='127.0.0.1', port='6789', debug=True, reloader=True)
