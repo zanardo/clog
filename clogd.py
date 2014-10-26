@@ -66,25 +66,10 @@ def duration_to_human(seconds):
     h = seconds/3600
     return '%02d:%02d:%02d.%03d' % (h, m, s, ms)
 
-def timediff_to_human(seconds):
-    if seconds is None:
+def date_to_human(dt):
+    if dt is None:
         return ''
-    diff = (datetime.datetime.now()-seconds).total_seconds()
-    if diff < 0:
-        return "in the future"
-    if diff < 1:
-        return '%d ms' % (diff*1000.0)
-    if diff < 60:
-        return '%d sec' % diff
-    if diff < 3600: # 1 hour
-        return '%d min' % (diff/60)
-    if diff < 86400:    # 1 day
-        return '%d hr' % (diff/3600)
-    if diff < 2419200:  # 1 month
-        return '%d days' % (diff/86400)
-    if diff < 29030400: # 1 year
-        return '%d mo' % (diff/2419200)
-    return 'ages'
+    return dt.strftime('%Y-%m-%d')
 
 def getctx():
     user = currentuser()
@@ -457,8 +442,8 @@ def jobs():
         jobs = []
         for job in c:
             j = dict(job)
-            j['date_last_success'] = timediff_to_human(j['date_last_success'])
-            j['date_last_failure'] = timediff_to_human(j['date_last_failure'])
+            j['date_last_success'] = date_to_human(j['date_last_success'])
+            j['date_last_failure'] = date_to_human(j['date_last_failure'])
             j['last_duration'] = duration_to_human(j['last_duration'])
             jobs.append(j)
         return dict(jobs=jobs)
