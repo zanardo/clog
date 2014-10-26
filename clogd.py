@@ -60,13 +60,11 @@ log = logging.getLogger(__name__)
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 
 def duration_to_human(seconds):
-    if seconds < 1:
-        return '%d ms' % (seconds*1000.0)
-    if seconds < 60:
-        return '%d sec' % seconds
-    if seconds < 3600:  # 1 hour
-        return '%d min %d sec' % (seconds/60.0, seconds%60)
-    return '%d hr %d min' % (seconds/3600, (seconds/3600%60))
+    ms = (seconds - int(seconds)) * 100
+    s = seconds
+    m = seconds/60
+    h = seconds/3600
+    return '%02d:%02d:%02d.%03d' % (h, m, s, ms)
 
 def timediff_to_human(seconds):
     if seconds is None:
