@@ -581,7 +581,7 @@ def purge_sessions():
         c.execute("delete from sessions where date(now())-"
             "date(date_login) > 7")
         if c.rowcount > 0:
-            log.info('maint_thread: purged %s login sessions', c.rowcount)
+            log.info('purged %s login sessions', c.rowcount)
 
 # Delete old entries on jobhistory from database.
 def purge_jobhistory():
@@ -601,7 +601,7 @@ def purge_jobhistory():
                         "date(now())-date(datestarted) > %(daystokeep)s and "
                         "job_id=%(job_id)s", locals())
                     if c3.rowcount > 0:
-                        log.debug("maint_thread: purged %s entries for jobhistory",
+                        log.debug("purged %s entries for jobhistory",
                             c3.rowcount)
 
 # Delete unreferenced entries from outputs.
@@ -610,7 +610,7 @@ def purge_outputs():
         c.execute("delete from outputs where sha1 not in ( "
             "select distinct output_sha1 from jobhistory );")
         if c.rowcount > 0:
-            log.debug("maint_thread: purged %s entries for outputs",
+            log.debug("purged %s entries for outputs",
                 c.rowcount)
 
 def send_alert(email, computername, computeruser, script, status, output):
@@ -628,20 +628,14 @@ def send_alert(email, computername, computeruser, script, status, output):
     s = subprocess.Popen(['mail', '-s', subject, email], stdin=subprocess.PIPE)
     s.communicate(body)
 
-# Long running maintenance thread.
-def maint_thread():
-    log.info('maint_thread: starting maintenance thread')
-    while True:
-        time.sleep(1800)
-        log.info('maint_thread: starting maintenance')
-        try:
-            purge_jobhistory()
-            purge_outputs()
-            purge_sessions()
-        except Exception, ex:
-            log.info("maint_thread: error: %s", ex)
-            print traceback.format_exc()
-        log.info('maint_thread: finishing maintenance')
+# Purge expired data.
+@get('/cleanup')
+def cleanup():
+    log.info('starting maintenance')
+    purge_jobhistory()
+    purge_outputs()
+    purge_sessions()
+    log.info('finishing maintenance')
 
 
 app = bottle.default_app()
