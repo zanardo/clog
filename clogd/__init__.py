@@ -44,6 +44,7 @@ import zlib
 import random
 import bottle
 import logging
+import os.path
 import datetime
 import threading
 import traceback
@@ -51,6 +52,8 @@ import subprocess
 import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
+
+bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views'))
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
     '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
@@ -290,7 +293,8 @@ def changepasswordsave():
 def static(filename):
     if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
         abort(400, "invalid filename")
-    return static_file('static/%s' % filename, root='.')
+    root = os.path.dirname(__file__)
+    return static_file('static/%s' % filename, root=root)
 
 @get('/jobs/<computername>/<computeruser>/<script>/<id>')
 @requires_auth
