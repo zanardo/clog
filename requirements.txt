@@ -1,3 +1,4 @@
+zpgdb==0.1
 Bottle==0.12.7
 psycopg2==2.5.2
 gunicorn==19.1.1
