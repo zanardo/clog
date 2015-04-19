@@ -14,5 +14,8 @@ clean:
 	rm -f *.pyc
 	rm -rf .venv
 
+run-server-devel: venv
+	while :; do CLOGD_CONF="`pwd`/clogd.dev.conf" .venv/bin/waitress-serve --host 127.0.0.1 --port 57890 clogd:app; sleep 2; done
+
 
 .PHONY: all venv install-cli clean

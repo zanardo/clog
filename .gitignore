@@ -1,4 +1,4 @@
 **.swp
 **.pyc
 .venv/
-clogd.conf
+*.conf
