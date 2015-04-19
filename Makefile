@@ -13,3 +13,6 @@ install-cli:
 clean:
 	rm -f *.pyc
 	rm -rf .venv
+
+
+.PHONY: all venv install-cli clean
