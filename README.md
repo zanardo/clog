@@ -30,8 +30,8 @@ Import the initial database schema:
 
 Configure clogd:
 
-    cp config_example.yaml config.yaml
-    $EDITOR config.yaml
+    cp clogd.conf.example clogd.conf
+    $EDITOR clogd.conf
 
 You can run `clogd` with `make run-server` or start if with supervisor:
 
