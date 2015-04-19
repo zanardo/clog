@@ -40,6 +40,7 @@ import os
 import re
 import sys
 import time
+import json
 import zlib
 import random
 import bottle
@@ -51,6 +52,18 @@ import traceback
 import subprocess
 import zpgdb as db
 import psycopg2
+
+# Default configuration. The environment variable CLOGD_CONF should be
+# declared before importing this module. This envvar should point to a json
+# file containing a dictionary with keys and values that override the default
+# configuration.
+CONFIG = {
+    'pg_host': '127.0.0.1',
+    'pg_port': 5432,
+    'pg_db': 'clog_dev',
+    'pg_user': 'clog_dev',
+    'pg_pass': '**password**',
+}
 
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views'))
 
@@ -600,11 +613,15 @@ def cleanup():
 
 app = bottle.default_app()
 
-db.config_connection(os.environ['PG_HOST'],
-    int(os.environ['PG_PORT']), os.environ['PG_USER'],
-    os.environ['PG_PASS'], os.environ['PG_DB'])
+# Reading configuration file.
+if 'CLOGD_CONF' in os.environ:
+    log.info('reading configuration from %s', os.environ['CLOGD_CONF'])
+    with open(os.environ['CLOGD_CONF'], 'r') as fp:
+        conf = json.load(fp)
+        for k in CONFIG:
+            if k in conf:
+                CONFIG[k] = conf[k]
 
-
-if __name__ == '__main__':
-    # For development
-    bottle.run(host='127.0.0.1', port='6789', debug=True, reloader=True)
+db.config_connection(
+    CONFIG['pg_host'], CONFIG['pg_port'], CONFIG['pg_db'],
+    CONFIG['pg_user'], CONFIG['pg_pass'])
