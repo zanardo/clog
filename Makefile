@@ -17,5 +17,8 @@ clean:
 run-server-devel: venv
 	while :; do CLOGD_CONF="`pwd`/clogd.dev.conf" .venv/bin/waitress-serve --host 127.0.0.1 --port 57890 clogd:app; sleep 2; done
 
+run-server: venv
+	CLOGD_CONF=`pwd`/clogd.conf .venv/bin/waitress-serve --host 0.0.0.0 --port 27890 clogd:app
+
 
 .PHONY: all venv install-cli clean
