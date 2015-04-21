@@ -40,7 +40,7 @@ import os
 import re
 import sys
 import time
-import json
+import yaml
 import zlib
 import random
 import bottle
@@ -54,7 +54,7 @@ import zpgdb as db
 import psycopg2
 
 # Default configuration. The environment variable CLOGD_CONF should be
-# declared before importing this module. This envvar should point to a json
+# declared before importing this module. This envvar should point to a yaml
 # file containing a dictionary with keys and values that override the default
 # configuration.
 CONFIG = {
@@ -617,7 +617,7 @@ app = bottle.default_app()
 if 'CLOGD_CONF' in os.environ:
     log.info('reading configuration from %s', os.environ['CLOGD_CONF'])
     with open(os.environ['CLOGD_CONF'], 'r') as fp:
-        conf = json.load(fp)
+        conf = yaml.load(fp)
         for k in CONFIG:
             if k in conf:
                 CONFIG[k] = conf[k]

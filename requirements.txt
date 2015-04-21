@@ -2,3 +2,4 @@ zpgdb==0.1
 Bottle==0.12.8
 psycopg2==2.5.5
 waitress==0.8.9
+PyYAML==3.11
