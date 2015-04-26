@@ -51,7 +51,6 @@ import threading
 import traceback
 import subprocess
 import zpgdb as db
-import psycopg2
 
 # Default configuration. The environment variable CLOGD_CONF should be
 # declared before importing this module. This envvar should point to a yaml
@@ -488,7 +487,7 @@ def newjob():
         try:
             c.execute("insert into outputs (sha1, output) values "
                 "(%(output_sha1)s, %(outputz)s)", locals())
-        except psycopg2.IntegrityError:
+        except db.psycopg2.IntegrityError:
             pass
 
     job_id = get_job_id(computername, computeruser, script)
@@ -514,7 +513,7 @@ def newjob():
                 c.execute("update jobs set date_last_failure=%(start_time)s, "
                     "last_status='fail', last_duration=%(duration)s "
                     "where id=%(job_id)s", locals())
-    except psycopg2.IntegrityError:
+    except db.psycopg2.IntegrityError:
         # Ignoring duplicate insertion.
         return 'ok'
     else:
