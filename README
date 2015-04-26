@@ -1,9 +1,8 @@
 `clog' is a centralized monitoring tool for crontabs, scheduled events, etc,
-running on other computers. The client executes a script on a Linux or Windows
-machine, and sends the result to the server, which shows jobs in a web based
-interface, with start and end time, duration, status (success or failure),
-script output, etc. The server can send notification alerts by e-mail when jobs
-fail.
+running on other computers. The client executes a script on a Linux machine,
+and sends the result to the server, which shows jobs in a web based interface,
+with start and end time, duration, status (success or failure), script output,
+etc. The server can send notification alerts by e-mail when jobs fail.
 
 
 Server installation
@@ -72,4 +71,4 @@ should be dispatched to the server:
 
     clog send-queue http://servername:27890/
 
-You can schedule both actions on cron or Windows task scheduler.
+You can schedule both actions on cron.
