@@ -19,7 +19,7 @@ Create a new user in PostgreSQL, which will own the database. The user should
 have login role, and should not have superuser, create database or other
 privileges. Sample:
 
-    createuser -ClRS clog
+    createuser -P clog
 
 Create a new database in PostgreSQL, owned by the new user:
 
