@@ -622,5 +622,5 @@ if 'CLOGD_CONF' in os.environ:
                 CONFIG[k] = conf[k]
 
 db.config_connection(
-    CONFIG['pg_host'], CONFIG['pg_port'], CONFIG['pg_db'],
-    CONFIG['pg_user'], CONFIG['pg_pass'])
+    CONFIG['pg_host'], CONFIG['pg_port'], CONFIG['pg_user'],
+    CONFIG['pg_pass'], CONFIG['pg_db'])
