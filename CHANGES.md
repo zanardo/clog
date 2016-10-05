@@ -1,7 +1,6 @@
-clog changes
-------------
+# clog changes
 
-0.5 - (in development)
+## 0.5 - (in development)
 
 - Database migration from SQLite to PostgreSQL.
 - Output text is deduplicated on saving, reducing storage size for frequently
@@ -10,12 +9,12 @@ clog changes
 - More readable date and interval format.
 
 
-v0.4.1 - 2014-02-22
+# v0.4.1 - 2014-02-22
 
 - Fix last duration field not being saved.
 
 
-v0.4 - 2014-02-15
+# v0.4 - 2014-02-15
 
 - Human readable job duration.
 - Human readable last success and last failure date on index page.
@@ -23,12 +22,12 @@ v0.4 - 2014-02-15
 - Database schema auto migration on clog server startup.
 
 
-v0.3 - 2013-11-15
+# v0.3 - 2013-11-15
 
 - Rewrite clog client in Go, for easier deployment and fast startup time.
 
 
-v0.2 - 2013-11-06
+# v0.2 - 2013-11-06
 
 - E-Mail alerts when job fails and when job backs to normal after a failure.
 - Per job configuration of maximum number of days to maintain history entries.
@@ -37,11 +36,11 @@ v0.2 - 2013-11-06
 - All jobs history pagination.
 
 
-v0.1.1 - 2013-10-25
+# v0.1.1 - 2013-10-25
 
 - Upper HTTP POST size limit to 10MB.
 
 
-v0.1 - 2013-10-20
+# v0.1 - 2013-10-20
 
 - Initial version.
