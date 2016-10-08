@@ -117,6 +117,7 @@ def runscript(script, encoding='UTF-8', scripts_path=None, queue_path=None):
         while True:
             chunk = strenc(s.stdout.read(4096), encoding=encoding)
             fp.write(chunk)
+            sys.stdout.write(chunk)
             return_code = s.poll()
             if return_code is not None:
                 break
