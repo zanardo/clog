@@ -8,7 +8,7 @@ venv: .venv/bin/activate
 	touch .venv/bin/activate
 
 install-cli:
-	sudo install -o root -g root -m 755 scripts/clog /usr/bin/clog
+	sudo install -o root -g root -m 755 scripts/clog /usr/local/bin/clog
 
 clean:
 	rm -f *.pyc
