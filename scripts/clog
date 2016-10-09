@@ -42,7 +42,7 @@ import urllib
 import urllib2
 import logging
 
-__VERSION__ = '0.5dev'
+__VERSION__ = '0.5beta1'
 
 logging.basicConfig(
     level=logging.DEBUG,

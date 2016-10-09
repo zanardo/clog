@@ -27,7 +27,7 @@
 # This is clog server. See https://github.com/zanardo/clog for more details.
 #
 
-__VERSION__ = '0.5dev'
+__VERSION__ = '0.5beta1'
 
 from bottle import run, local, route, view, get, post, redirect, \
     response, request, static_file, abort
