@@ -680,8 +680,7 @@ def newjob():
                         SELECT status
                         FROM jobhistory
                         WHERE job_id = %(job_id)s
-                        ORDER BY datestarted
-                        DESC LIMIT 1 OFFSET 1
+                        ORDER BY datestarted DESC LIMIT 1 OFFSET 1
                     ''', locals())
                     r = c.fetchone()
                     if r and r['status'] == 'fail':
