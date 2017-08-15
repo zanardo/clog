@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from bottle import run
-from clogd import app
+from clogd.app import app
 from os import environ
 
 if 'CLOGD_CONF' not in environ:

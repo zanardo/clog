@@ -1,9 +1,9 @@
 from setuptools import setup
-__version__ = '0.5beta1'
+from clogd import __VERSION__
 
 setup(
     name='clog',
-    version=__version__,
+    version=__VERSION__,
     packages=['clogd'],
     package_data={
         '': ['static/*.*', 'views/*.*'],
