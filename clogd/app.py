@@ -39,13 +39,13 @@ import yaml
 import zlib
 import random
 import bottle
-import logging
 import os.path
 import datetime
 import subprocess
 import zpgdb as db
 
 from clogd import __VERSION__
+from clogd.log import log
 
 # Default configuration. The environment variable CLOGD_CONF should be
 # declared before importing this module. This envvar should point to a yaml
@@ -62,12 +62,6 @@ CONFIG = {
 bottle.TEMPLATE_PATH.insert(
     0, os.path.join(os.path.dirname(__file__), 'views')
 )
-
-logging.basicConfig(
-    level=logging.DEBUG, format='%(asctime)s.%(msecs)03d '
-    '%(levelname)3s | %(message)s', datefmt='%Y/%m/%d %H:%M:%S'
-)
-log = logging.getLogger(__name__)
 
 # Bottle has a low limit for post data. Let's make it larger.
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
