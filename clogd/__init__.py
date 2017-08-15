@@ -589,12 +589,18 @@ def purge_sessions():
 # Delete old entries on jobhistory from database.
 def purge_jobhistory():
     with db.trans() as c:
-        c.execute("select id from jobs")
+        c.execute('''
+            SELECT id
+            FROM jobs
+        ''')
         for job in c:
             job_id = job['id']
             with db.trans() as c2:
-                c2.execute("select daystokeep from jobconfig where job_id=%(job_id)s",
-                    locals())
+                c2.execute('''
+                    SELECT daystokeep
+                    FROM jobconfig
+                    WHERE job_id = %(job_id)s
+                ''', locals())
                 daystokeep = 30
                 r = c2.fetchone()
                 if r:
@@ -611,23 +617,32 @@ def purge_jobhistory():
 # Delete unreferenced entries from outputs.
 def purge_outputs():
     with db.trans() as c:
-        c.execute("delete from outputs where sha1 not in ( "
-            "select distinct output_sha1 from jobhistory );")
+        c.execute('''
+            DELETE FROM outputs
+            WHERE sha1 NOT IN (
+                SELECT DISTINCT output_sha1 FROM jobhistory
+            )
+        ''')
         if c.rowcount > 0:
-            log.debug("purged %s entries for outputs",
-                c.rowcount)
+            log.debug("purged %s entries for outputs", c.rowcount)
 
 
 def send_alert(email, computername, computeruser, script, status, output):
     subject = ''
     body = ''
     if status == 'fail':
-        subject = 'clog: job {} failed for {}@{}'.format(script, computeruser,
-            computername)
+        subject = 'clog: job {} failed for {}@{}'.format(
+            script,
+            computeruser,
+            computername
+        )
         body = output
     elif status == 'ok':
-        subject = 'clog: job {} back to normal for {}@{}'.format(script,
-            computeruser, computername)
+        subject = 'clog: job {} back to normal for {}@{}'.format(
+            script,
+            computeruser,
+            computername
+        )
     body += '\n\nThis is an automatic notification sent by ' + \
             'clog (https://github.com/zanardo/clog)'
     s = subprocess.Popen(['mail', '-s', subject, email], stdin=subprocess.PIPE)
