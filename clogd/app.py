@@ -362,7 +362,7 @@ def jobhistory(computername, computeruser, script):
                 , j.computername
                 , j.computeruser
                 , j.script
-                , j.datestarted
+                , h.datestarted
                 , h.datefinished
                 , h.status
                 , h.duration
@@ -642,7 +642,7 @@ def newjob():
                     status, duration, output_sha1
                 )
                 VALUES (
-                    %(rid)s, %(job_id)s, %(ip)s, %(start_time)s
+                    %(rid)s, %(job_id)s, %(ip)s, %(start_time)s,
                     %(end_time)s, %(status)s, %(duration)s, %(output_sha1)s
                 )
                 ''', locals())
