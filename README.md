@@ -1,8 +1,8 @@
 `clog` is a centralized monitoring tool for crontabs, scheduled events, etc,
 running on other computers. The client executes a script on a Linux machine,
 and sends the result to the server, which shows jobs in a web based interface,
-with start and end time, duration, status (success or failure), script output,
-etc. The server can send notification alerts by e-mail when jobs fail.
+with start and finish time, duration, status (success or failure), script
+output, etc. The server can send notification alerts by e-mail when jobs fail.
 
 # Server installation
 
@@ -12,7 +12,7 @@ Linux.
 ```bash
 git clone https://github.com/zanardo/clog
 cd clog
-make
+make dev
 ```
 
 Create a new user in PostgreSQL, which will own the database. The user should
@@ -42,11 +42,11 @@ cp config.yml.example config.yml
 $EDITOR config.yml
 ```
 
-You can run `clogd` with `make run-server` or start if manually:
+You can run `clogd` with `make run` or start if manually:
 
 ```
 export CLOGD_CONF=$(pwd)/config.yml
-.venv/bin/waitress-serve --host 0.0.0.0 --port 27890 clogd:app
+.venv/bin/waitress-serve --host 0.0.0.0 --port 7890 clogd:app
 ```
 
 After the installation, access with a browser, with user `admin` and password
@@ -78,7 +78,7 @@ To run the script:
 clog run test.sh
 ```
 
-`clog` will put the result into a queue inside `$HOME/clog-queue`, and this
+`clog` will put the result into a queue inside `$HOME/.clog-queue`, and this
 queue should be dispatched to the server:
 
 ```
