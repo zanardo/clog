@@ -1,4 +1,0 @@
-zpgdb==0.4
-Bottle==0.12.9
-waitress==1.0.0
-PyYAML==3.11

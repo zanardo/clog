@@ -1,4 +1,7 @@
 **.swp
 **.pyc
 .venv/
+*.egg-info/
+dist/
+build/
 *.yml
