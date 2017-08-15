@@ -29,17 +29,14 @@
 
 __VERSION__ = '0.5beta1'
 
-from bottle import run, local, route, view, get, post, redirect, \
+from bottle import route, view, get, post, redirect, \
     response, request, static_file, abort
-from contextlib import contextmanager
 from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
 
 import os
 import re
-import sys
-import time
 import yaml
 import zlib
 import random
@@ -47,8 +44,6 @@ import bottle
 import logging
 import os.path
 import datetime
-import threading
-import traceback
 import subprocess
 import zpgdb as db
 
