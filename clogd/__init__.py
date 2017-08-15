@@ -68,6 +68,7 @@ log = logging.getLogger(__name__)
 # Bottle has a low limit for post data. Let's make it larger.
 bottle.BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 
+
 def duration_to_human(seconds):
     ms = (seconds - int(seconds)) * 100
     s = seconds
@@ -75,15 +76,18 @@ def duration_to_human(seconds):
     h = seconds/3600
     return '%02d:%02d:%02d.%03d' % (h, m, s, ms)
 
+
 def date_to_human(dt):
     if dt is None:
         return ''
     return dt.strftime('%Y-%m-%d')
 
+
 def getctx():
     user = currentuser()
     user_is_admin = userisadmin(user)
     return dict(version=__VERSION__, username=user, isadmin=user_is_admin)
+
 
 def requires_auth(f):
     @wraps(f)
@@ -93,6 +97,7 @@ def requires_auth(f):
             return redirect('/login')
         return f(*args, **kwargs)
     return decorated
+
 
 def requires_admin(f):
     @wraps(f)
@@ -104,6 +109,7 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
+
 def validateuserdb(user, passwd):
     passwdsha1 = sha1(passwd).hexdigest()
     with db.trans() as c:
@@ -112,12 +118,14 @@ def validateuserdb(user, passwd):
         r = c.fetchone()
         return bool(r)
 
+
 def validatesession(session_id):
     with db.trans() as c:
         c.execute("select session_id from sessions where session_id=%(session_id)s",
             locals())
         r = c.fetchone()
         return bool(r)
+
 
 def currentuser():
     session_id = request.get_cookie('clog')
@@ -126,16 +134,19 @@ def currentuser():
             "where session_id=%(session_id)s", locals())
         return c.fetchone()['username']
 
+
 def userisadmin(username):
     with db.trans() as c:
         c.execute("select is_admin from users where username=%(username)s",
             locals())
         return c.fetchone()['is_admin']
 
+
 def removesession(session_id):
     with db.trans() as c:
         c.execute("delete from sessions where session_id=%(session_id)s",
             locals())
+
 
 def makesession(user):
     with db.trans() as c:
@@ -143,6 +154,7 @@ def makesession(user):
         c.execute("insert into sessions (session_id, username) "
             "values (%(session_id)s, %(user)s)", locals())
         return session_id
+
 
 def get_job_id(computername, computeruser, script):
     with db.trans() as c:
@@ -153,6 +165,7 @@ def get_job_id(computername, computeruser, script):
             return None
         else:
             return r[0]
+
 
 @get('/admin')
 @view('admin')
@@ -168,6 +181,7 @@ def admin():
             users.append(user)
     return dict(ctx=getctx(), users=users)
 
+
 @get('/admin/remove-user/:username')
 @requires_auth
 @requires_admin
@@ -178,6 +192,7 @@ def removeuser(username):
         c.execute("delete from sessions where username=%(username)s", locals())
         c.execute("delete from users where username=%(username)s", locals())
     return redirect('/admin')
+
 
 @post('/admin/save-new-user')
 @requires_auth
@@ -193,6 +208,7 @@ def newuser():
             "values (%(username)s, %(sha1password)s, 'f')", locals())
     return u'user %s created with password %s' % (username, password)
 
+
 @get('/admin/force-new-password/:username')
 @requires_auth
 @requires_admin
@@ -205,6 +221,7 @@ def forceuserpassword(username):
         c.execute("update users set password=%(sha1password)s "
             "where username=%(username)s", locals())
     return u'user %s had password changed to: %s' % (username, password)
+
 
 @get('/admin/change-user-admin-status/:username/:status')
 @requires_auth
@@ -220,10 +237,12 @@ def changeuseradminstatus(username, status):
             "where username=%(username)s", locals())
     return redirect('/admin')
 
+
 @get('/login')
 @view('login')
 def login():
     return dict(version=__VERSION__)
+
 
 @post('/login')
 def validatelogin():
@@ -236,6 +255,7 @@ def validatelogin():
     else:
         return 'invalid user or password'
 
+
 @get('/logout')
 def logout():
     session_id = request.get_cookie('clog')
@@ -244,11 +264,13 @@ def logout():
         response.delete_cookie('clog')
     return redirect('/login')
 
+
 @get('/change-password')
 @view('change-password')
 @requires_auth
 def changepassword():
     return dict(ctx=getctx())
+
 
 @post('/change-password')
 @requires_auth
@@ -269,12 +291,14 @@ def changepasswordsave():
             "where username=%(username)s", locals())
     return redirect('/')
 
+
 @route('/static/:filename')
 def static(filename):
     if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
         abort(400, "invalid filename")
     root = os.path.dirname(__file__)
     return static_file('static/%s' % filename, root=root)
+
 
 @get('/jobs/<computername>/<computeruser>/<script>/<id>')
 @requires_auth
@@ -295,6 +319,7 @@ def joboutput(computername, computeruser, script, id):
         else:
             response.content_type = 'text/plain; charset=utf-8'
             return zlib.decompress(r['output'])
+
 
 @get('/jobs/<computername>/<computeruser>/<script>/')
 @view('history')
@@ -318,6 +343,7 @@ def jobhistory(computername, computeruser, script):
             history.append(h)
         return dict(history=history, ctx=ctx)
 
+
 @get('/history')
 @view('historytable')
 @requires_auth
@@ -337,6 +363,7 @@ def allhistory():
             h['duration'] = duration_to_human(h['duration'])
             history.append(h)
         return dict(history=history, offset=offset)
+
 
 @get('/config-job/<computername>/<computeruser>/<script>/')
 @view('config-job')
@@ -363,6 +390,7 @@ def configjob(computername, computeruser, script):
             emails.append(r['email'])
         return dict(ctx=ctx, daystokeep=daystokeep, emails="\n".join(emails))
 
+
 @post('/purge-job/<computername>/<computeruser>/<script>/')
 @requires_auth
 @requires_admin
@@ -374,6 +402,7 @@ def purgejob(computername, computeruser, script):
         c.execute("delete from jobconfigalert where job_id=%(job_id)s", locals())
         c.execute("delete from jobs where id=%(job_id)s", locals())
     return redirect('/')
+
 
 @post('/save-daystokeep/<computername>/<computeruser>/<script>/')
 @requires_auth
@@ -395,6 +424,7 @@ def savedaystokeep(computername, computeruser, script):
     return redirect('/config-job/' + computername + '/' +
         computeruser + '/' + script + '/')
 
+
 @post('/save-alertemails/<computername>/<computeruser>/<script>/')
 @requires_auth
 @requires_admin
@@ -408,11 +438,13 @@ def savealertemails(computername, computeruser, script):
     return redirect('/config-job/' + computername + '/' +
         computeruser + '/' + script + '/')
 
+
 @get('/')
 @view('jobs')
 @requires_auth
 def index():
     return dict(ctx=getctx())
+
 
 @get('/jobs')
 @view('jobstable')
@@ -431,6 +463,7 @@ def jobs():
             j['last_duration'] = duration_to_human(j['last_duration'])
             jobs.append(j)
         return dict(jobs=jobs)
+
 
 @post('/')
 def newjob():
@@ -531,6 +564,7 @@ def newjob():
                                 status, output)
         return 'ok'
 
+
 # Get notification e-mails for a job.
 def getalertemails(computername, computeruser, script):
     job_id = get_job_id(computername, computeruser, script)
@@ -542,6 +576,7 @@ def getalertemails(computername, computeruser, script):
             emails.append(row['email'])
         return emails
 
+
 # Delete login sessions older than 7 days
 def purge_sessions():
     with db.trans() as c:
@@ -549,6 +584,7 @@ def purge_sessions():
             "date(date_login) > 7")
         if c.rowcount > 0:
             log.info('purged %s login sessions', c.rowcount)
+
 
 # Delete old entries on jobhistory from database.
 def purge_jobhistory():
@@ -571,6 +607,7 @@ def purge_jobhistory():
                         log.debug("purged %s entries for jobhistory",
                             c3.rowcount)
 
+
 # Delete unreferenced entries from outputs.
 def purge_outputs():
     with db.trans() as c:
@@ -579,6 +616,7 @@ def purge_outputs():
         if c.rowcount > 0:
             log.debug("purged %s entries for outputs",
                 c.rowcount)
+
 
 def send_alert(email, computername, computeruser, script, status, output):
     subject = ''
@@ -594,6 +632,7 @@ def send_alert(email, computername, computeruser, script, status, output):
             'clog (https://github.com/zanardo/clog)'
     s = subprocess.Popen(['mail', '-s', subject, email], stdin=subprocess.PIPE)
     s.communicate(body)
+
 
 # Purge expired data.
 @get('/cleanup')
