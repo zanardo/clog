@@ -16,7 +16,7 @@ install-cli:
 	sudo install -o root -g root -m 755 scripts/clog /usr/local/bin/clog
 
 clean:
-	rm -rf .venv *.egg-info
+	rm -rf .venv/ *.egg-info/ build/ dist/
 
 
 .PHONY: all dev run-dev install-cli clean
