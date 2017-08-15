@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2016, Antonio Zanardo <zanardo@gmail.com>
+# Copyright (c) 2013-2017, Antonio Zanardo <zanardo@gmail.com>
 #
 # All rights reserved.
 #
