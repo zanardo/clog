@@ -41,6 +41,7 @@ import argparse
 import urllib
 import urllib2
 import logging
+import base64
 
 __VERSION__ = '0.5beta2'
 
@@ -159,6 +160,7 @@ def runqueue(server, timeout=30, queue_path=None, max_size=1048576):
                 else:
                     meta['output'] = fp.read()
             meta['id'] = queue_id
+            meta['output'] = base64.b64encode(meta['output'])
             data = urllib.urlencode(meta)
             req = urllib2.Request(server, data)
             req.add_header(
