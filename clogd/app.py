@@ -8,6 +8,7 @@ from bottle import route, view, get, post, redirect, \
 from functools import wraps
 from hashlib import sha1
 from uuid import uuid4
+from base64 import b64decode
 
 import os
 import re
@@ -591,7 +592,8 @@ def newjob():
     if not re.match(r'^[a-zA-Z0-9\-_\.]+$', script):
         abort(400, "invalid script name")
 
-    output = request.forms.output.encode('utf-8') or ''
+    output = request.forms.output or ''
+    output = b64decode(output)
     outputz = buffer(zlib.compress(output))
 
     computername = request.forms.computername
