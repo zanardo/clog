@@ -9,9 +9,9 @@ setup(
         '': ['static/*.*', 'views/*.*'],
     },
     install_requires=[
-        'zpgdb==0.4.1',
+        'zpgdb==0.4.2',
         'Bottle==0.12.13',
-        'waitress==1.0.2',
+        'waitress==1.1.0',
         'PyYAML==3.12',
     ],
 )
