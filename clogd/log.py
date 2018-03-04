@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2017, Antonio Zanardo <zanardo@gmail.com>
+# Copyright (c) 2013-2018, Antonio Zanardo <zanardo@gmail.com>
 #
 
 import logging
